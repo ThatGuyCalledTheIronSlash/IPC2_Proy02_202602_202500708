@@ -1,5 +1,7 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/Catalogo.Nucleo/Catalogo.Nucleo.csproj" />
+    <Project Path="src/Backend/Backend.csproj" />
+    <Project Path="src/Frontend/Frontend.csproj" />
+    <Project Path="src/Pruebas/Pruebas.csproj" />
   </Folder>
 </Solution>
