@@ -3,14 +3,28 @@ using System;
 namespace Backend.TDA.Libros
 {
     /// <summary>
-    /// Árbol binario de búsqueda (TDA propio) que organiza libros
-    /// por su ISBN. Permite inserción, búsqueda, eliminación,
-    /// obtención de mínimo/máximo y recorrido ordenado, todo en
-    /// tiempo logarítmico promedio.
+    /// Árbol binario de búsqueda (TDA propio) indexado por ISBN.
+    /// La estructura del árbol (izquierdo/derecho) vive en una clase
+    /// interna privada (Nodo), separada de NodoLibro. Así, el mismo
+    /// NodoLibro puede insertarse en varios BSTLibros distintos
+    /// (por ejemplo: el índice global del catálogo y el índice local
+    /// de su categoría) sin que ambos árboles se pisen entre sí.
     /// </summary>
     public class BSTLibros
     {
-        private NodoLibro raiz;
+        private class Nodo
+        {
+            public NodoLibro Libro;
+            public Nodo Izquierdo;
+            public Nodo Derecho;
+
+            public Nodo(NodoLibro libro)
+            {
+                Libro = libro;
+            }
+        }
+
+        private Nodo raiz;
 
         public BSTLibros()
         {
@@ -30,24 +44,23 @@ namespace Backend.TDA.Libros
             raiz = InsertarRecursivo(raiz, nuevoLibro);
         }
 
-        private NodoLibro InsertarRecursivo(NodoLibro actual, NodoLibro nuevoLibro)
+        private Nodo InsertarRecursivo(Nodo actual, NodoLibro nuevoLibro)
         {
             if (actual == null)
             {
-                return nuevoLibro;
+                return new Nodo(nuevoLibro);
             }
 
-            if (nuevoLibro.ISBN < actual.ISBN)
+            if (nuevoLibro.ISBN < actual.Libro.ISBN)
             {
                 actual.Izquierdo = InsertarRecursivo(actual.Izquierdo, nuevoLibro);
             }
-            else if (nuevoLibro.ISBN > actual.ISBN)
+            else if (nuevoLibro.ISBN > actual.Libro.ISBN)
             {
                 actual.Derecho = InsertarRecursivo(actual.Derecho, nuevoLibro);
             }
             else
             {
-                // ISBN duplicado: la restricción indica que el ISBN es único.
                 throw new InvalidOperationException(
                     $"Ya existe un libro registrado con el ISBN {nuevoLibro.ISBN}.");
             }
@@ -60,17 +73,18 @@ namespace Backend.TDA.Libros
         // ---------------------------------------------------------
         public NodoLibro BuscarPorISBN(int isbn)
         {
-            return BuscarRecursivo(raiz, isbn);
+            Nodo encontrado = BuscarRecursivo(raiz, isbn);
+            return encontrado?.Libro;
         }
 
-        private NodoLibro BuscarRecursivo(NodoLibro actual, int isbn)
+        private Nodo BuscarRecursivo(Nodo actual, int isbn)
         {
-            if (actual == null || actual.ISBN == isbn)
+            if (actual == null || actual.Libro.ISBN == isbn)
             {
                 return actual;
             }
 
-            if (isbn < actual.ISBN)
+            if (isbn < actual.Libro.ISBN)
             {
                 return BuscarRecursivo(actual.Izquierdo, isbn);
             }
@@ -84,30 +98,24 @@ namespace Backend.TDA.Libros
         public NodoLibro ObtenerMinimo()
         {
             if (raiz == null) return null;
-            return ObtenerMinimoRecursivo(raiz);
+            return ObtenerMinimoRecursivo(raiz).Libro;
         }
 
-        private NodoLibro ObtenerMinimoRecursivo(NodoLibro actual)
+        private Nodo ObtenerMinimoRecursivo(Nodo actual)
         {
-            if (actual.Izquierdo == null)
-            {
-                return actual;
-            }
+            if (actual.Izquierdo == null) return actual;
             return ObtenerMinimoRecursivo(actual.Izquierdo);
         }
 
         public NodoLibro ObtenerMaximo()
         {
             if (raiz == null) return null;
-            return ObtenerMaximoRecursivo(raiz);
+            return ObtenerMaximoRecursivo(raiz).Libro;
         }
 
-        private NodoLibro ObtenerMaximoRecursivo(NodoLibro actual)
+        private Nodo ObtenerMaximoRecursivo(Nodo actual)
         {
-            if (actual.Derecho == null)
-            {
-                return actual;
-            }
+            if (actual.Derecho == null) return actual;
             return ObtenerMaximoRecursivo(actual.Derecho);
         }
 
@@ -119,47 +127,29 @@ namespace Backend.TDA.Libros
             raiz = EliminarRecursivo(raiz, isbn);
         }
 
-        private NodoLibro EliminarRecursivo(NodoLibro actual, int isbn)
+        private Nodo EliminarRecursivo(Nodo actual, int isbn)
         {
             if (actual == null)
             {
-                // No existe un libro con ese ISBN; no hay nada que eliminar.
                 return null;
             }
 
-            if (isbn < actual.ISBN)
+            if (isbn < actual.Libro.ISBN)
             {
                 actual.Izquierdo = EliminarRecursivo(actual.Izquierdo, isbn);
             }
-            else if (isbn > actual.ISBN)
+            else if (isbn > actual.Libro.ISBN)
             {
                 actual.Derecho = EliminarRecursivo(actual.Derecho, isbn);
             }
             else
             {
-                // Encontramos el nodo a eliminar.
+                if (actual.Izquierdo == null) return actual.Derecho;
+                if (actual.Derecho == null) return actual.Izquierdo;
 
-                // Caso 1: sin hijos, o solo un hijo.
-                if (actual.Izquierdo == null)
-                {
-                    return actual.Derecho;
-                }
-                if (actual.Derecho == null)
-                {
-                    return actual.Izquierdo;
-                }
-
-                // Caso 2: dos hijos.
-                // Buscamos el sucesor in-order (el mínimo del subárbol derecho),
-                // copiamos sus datos al nodo actual, y eliminamos el sucesor.
-                NodoLibro sucesor = ObtenerMinimoRecursivo(actual.Derecho);
-
-                actual.ISBN = sucesor.ISBN;
-                actual.Titulo = sucesor.Titulo;
-                actual.Autor = sucesor.Autor;
-                actual.Categoria = sucesor.Categoria;
-
-                actual.Derecho = EliminarRecursivo(actual.Derecho, sucesor.ISBN);
+                Nodo sucesor = ObtenerMinimoRecursivo(actual.Derecho);
+                actual.Libro = sucesor.Libro;
+                actual.Derecho = EliminarRecursivo(actual.Derecho, sucesor.Libro.ISBN);
             }
 
             return actual;
@@ -168,21 +158,17 @@ namespace Backend.TDA.Libros
         // ---------------------------------------------------------
         // RECORRIDO IN-ORDER (orden ascendente por ISBN)
         // ---------------------------------------------------------
-        // Se usa un callback (Action) en vez de una colección propia
-        // de C#, para no violar la restricción de no usar List/Queue/etc.
-        // Quien llame a este método decide qué hacer con cada libro
-        // (imprimirlo, agregarlo a un TDA propio, generar un nodo .dot, etc.).
         public void RecorridoInOrder(Action<NodoLibro> accionPorLibro)
         {
             RecorridoInOrderRecursivo(raiz, accionPorLibro);
         }
 
-        private void RecorridoInOrderRecursivo(NodoLibro actual, Action<NodoLibro> accionPorLibro)
+        private void RecorridoInOrderRecursivo(Nodo actual, Action<NodoLibro> accionPorLibro)
         {
             if (actual == null) return;
 
             RecorridoInOrderRecursivo(actual.Izquierdo, accionPorLibro);
-            accionPorLibro(actual);
+            accionPorLibro(actual.Libro);
             RecorridoInOrderRecursivo(actual.Derecho, accionPorLibro);
         }
     }
