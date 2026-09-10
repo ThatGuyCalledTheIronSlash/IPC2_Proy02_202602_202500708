@@ -34,7 +34,13 @@ namespace Backend.Servicios
         // ====================================================================
         // GESTIÓN DE CATEGORÍAS
         // ====================================================================
-        
+                // Método para borrar todo y reiniciar el sistema
+        public void InicializarCatalogo()
+        {
+            IndiceGlobalLibros = new BSTLibros();
+            IndiceGlobalCategorias = new BSTCategorias();
+            CategoriasPrincipales = new BSTCategorias();
+        }
         public void AgregarCategoria(string nombre, string nombrePadre = null)
         {
             // Validar si la categoría ya existe (el XML es incremental y puede venir repetida)
