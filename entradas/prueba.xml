@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+  <listaCategorias>
+    <!-- Categorías Principales (Raíz) -->
+    <categoria>Ciencias</categoria>
+    <categoria>Literatura</categoria>
+
+    <!-- Subcategorías (Tienen un padre) -->
+    <categoria padre="Ciencias">Matematicas</categoria>
+    <categoria padre="Ciencias">Fisica</categoria>
+    <categoria padre="Literatura">Ficcion</categoria>
+  </listaCategorias>
+
+  <listaLibros>
+    <libro>
+      <ISBN>1001</ISBN>
+      <titulo>Calculo Diferencial</titulo>
+      <autor>James Stewart</autor>
+      <categoria>Matematicas</categoria>
+    </libro>
+    <libro>
+      <ISBN>1002</ISBN>
+      <titulo>Fisica Universitaria</titulo>
+      <autor>Sears Zemansky</autor>
+      <categoria>Fisica</categoria>
+    </libro>
+    <libro>
+      <ISBN>2001</ISBN>
+      <titulo>El Aleph</titulo>
+      <autor>Jorge Luis Borges</autor>
+      <categoria>Ficcion</categoria>
+    </libro>
+    <libro>
+      <ISBN>2002</ISBN>
+      <titulo>1984</titulo>
+      <autor>George Orwell</autor>
+      <categoria>Ficcion</categoria>
+    </libro>
+  </listaLibros>
+</config>
