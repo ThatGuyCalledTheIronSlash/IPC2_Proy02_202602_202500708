@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using System.Diagnostics;
 using Backend.TDA.Libros;
 
@@ -15,34 +16,37 @@ namespace Backend.Servicios
         {
             if (libros.EstaVacio())
             {
-                Console.WriteLine("La categoría no tiene libros para graficar.");
-                return;
+                throw new Exception("La categoría no tiene libros para graficar.");
             }
 
-            string dotContent = "digraph G {\n";
-            dotContent += "  node [shape=record, style=filled, fillcolor=lightblue, fontname=\"Arial\"];\n";
-            dotContent += "  rankdir=TB;\n"; // TB = Top to Bottom
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("digraph G {");
+            sb.AppendLine("  node [shape=record, style=filled, fillcolor=lightblue, fontname=\"Arial\"];");
+            sb.AppendLine("  rankdir=TB;"); // TB = Top to Bottom
 
             NodoLibro libroAnterior = null;
 
-            // Tu método In-Order nos garantiza el recorrido Ascendente requerido por el PDF!
+            // Recorrido In-Order garantiza orden ascendente por ISBN
             libros.RecorridoInOrder(libroActual =>
             {
-                string label = $"{{ ISBN: {libroActual.ISBN} | {libroActual.Titulo} | {libroActual.Autor} }}";
-                dotContent += $"  node{libroActual.ISBN} [label=\"{label}\"];\n";
+                string tituloEscapado = EscaparDOT(libroActual.Titulo);
+                string autorEscapado = EscaparDOT(libroActual.Autor);
+
+                string label = $"{{ ISBN: {libroActual.ISBN} | {tituloEscapado} | {autorEscapado} }}";
+                sb.AppendLine($"  node{libroActual.ISBN} [label=\"{label}\"];");
 
                 if (libroAnterior != null)
                 {
-                    dotContent += $"  node{libroAnterior.ISBN} -> node{libroActual.ISBN};\n";
+                    sb.AppendLine($"  node{libroAnterior.ISBN} -> node{libroActual.ISBN};");
                 }
 
                 libroAnterior = libroActual;
             });
 
-            dotContent += "}\n";
+            sb.AppendLine("}");
 
             string dotPath = rutaSalida.Replace(".png", ".dot");
-            File.WriteAllText(dotPath, dotContent);
+            File.WriteAllText(dotPath, sb.ToString());
 
             try
             {
@@ -62,8 +66,35 @@ namespace Backend.Servicios
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error al ejecutar Graphviz: " + ex.Message);
+                throw new Exception("Error al ejecutar Graphviz (¿está instalado y en el PATH?): " + ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Escapa caracteres especiales que romperían la sintaxis DOT
+        /// dentro de labels tipo record ({, }, |, <, >, ").
+        /// </summary>
+        private static string EscaparDOT(string texto)
+        {
+            if (string.IsNullOrEmpty(texto)) return texto;
+
+            StringBuilder resultado = new StringBuilder();
+            for (int i = 0; i < texto.Length; i++)
+            {
+                char c = texto[i];
+                switch (c)
+                {
+                    case '"':  resultado.Append("\\\""); break;
+                    case '{':  resultado.Append("\\{");  break;
+                    case '}':  resultado.Append("\\}");  break;
+                    case '|':  resultado.Append("\\|");  break;
+                    case '<':  resultado.Append("\\<");  break;
+                    case '>':  resultado.Append("\\>");  break;
+                    case '\\': resultado.Append("\\\\"); break;
+                    default:   resultado.Append(c);      break;
+                }
+            }
+            return resultado.ToString();
         }
     }
 }

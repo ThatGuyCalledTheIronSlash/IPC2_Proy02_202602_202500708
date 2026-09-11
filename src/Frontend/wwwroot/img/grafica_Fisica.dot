@@ -1,0 +1,5 @@
+digraph G {
+  node [shape=record, style=filled, fillcolor=lightblue, fontname="Arial"];
+  rankdir=TB;
+  node1002 [label="{ ISBN: 1002 | Fisica Universitaria | Sears Zemansky }"];
+}

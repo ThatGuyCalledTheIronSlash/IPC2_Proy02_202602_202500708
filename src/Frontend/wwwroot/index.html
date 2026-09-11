@@ -7,31 +7,39 @@
         <link rel="stylesheet" href="css/estilos.css">
     </head>
 <!-- Cuerpo de la pagina -->
-        <body>
-            <div class="contenedor">    
-                <h1>Bienvenido al Proyecto 2 de IPC2 N 2026</h1>
-                    <p> Bienvenido a la biblioteca virtual. Desde aquí se gestionan los archivos XML y la visualización en Graphviz</p>
-            <div class = "panel">
+    <body>
+        <div class="contenedor">    
+            <h1>Bienvenido al Proyecto 2 de IPC2 N 2026</h1>
+            <p>Bienvenido a la biblioteca virtual. Desde aquí se gestionan los archivos XML y la visualización en Graphviz</p>
+
+            <!------------------------------------------------------>
+            <div class="panel">
                 <button id="btnInicializar">Inicializar Catálogo</button>
             </div>
-<!------------------------------------------------------>
-            <div class = "panel">
+
+            <!------------------------------------------------------>
+            <div class="panel">
                 <h2>Cargar Catalogo XML</h2>
-                    <input type="file" id="archivoXml" accept=".xml" />
-                    <button id="btnCargar">Subir y Procesar</button>
-                        <p id="mensajeEstado" style="font-weight: bold; color: #d35400;"></p>
+                <input type="file" id="archivoXml" accept=".xml" />
+                <button id="btnCargar">Subir y Procesar</button>
+                <p id="mensajeEstado" style="font-weight: bold; color: #d35400;"></p>
+                <!-- Aquí se muestran los avisos individuales del XML (si los hay) -->
+                <pre id="avisosXml" style="text-align: left; color: #c0392b; font-size: 0.85em; white-space: pre-wrap; display: none;"></pre>
             </div>
-<!------------------------------------------------------>
-            <div class = "panel">
-                <h2>Ver Libros por Categoría (ascendente) </h2>
-                    <input type="text" id="nombreCategoria" placeholder="Ej. Matematicas" style="padding: 10px; width: 60%; margin-bottom: 10px;" />   
-                        <button id="btnGraficar">Generar Gráfica</button>
-                            <p id="mensajeGrafica" style="font-weight: bold; color: #2980b9;"></p>
-            <!--Imagen Generada-->
-            <div style="margin-top: 20px;">
-                <img id="imgResultado" src="" alt="Gráfica de libros" style="max-width: 100%; display: none; border: 1px solid #ccc; border-radius: 5px; padding: 10px; background: white;" />
+
+            <!------------------------------------------------------>
+            <div class="panel">
+                <h2>Ver Libros por Categoría (ascendente)</h2>
+                <input type="text" id="nombreCategoria" placeholder="Ej. Matematicas" style="padding: 10px; width: 60%; margin-bottom: 10px;" />   
+                <button id="btnGraficar">Generar Gráfica</button>
+                <p id="mensajeGrafica" style="font-weight: bold; color: #2980b9;"></p>
+                <!--Imagen Generada-->
+                <div style="margin-top: 20px;">
+                    <img id="imgResultado" src="" alt="Gráfica de libros" style="max-width: 100%; display: none; border: 1px solid #ccc; border-radius: 5px; padding: 10px; background: white;" />
+                </div>
             </div>
-        </div> 
+        </div>
+
 <!-----------script para manejar los eventos de los botones y la carga de archivos--------------->
     <script>
         // Boton Inicializar
@@ -39,10 +47,15 @@
             const respuesta = await fetch('/api/inicializar', { method: 'POST' });
             const resultado = await respuesta.json();
             document.getElementById('mensajeEstado').innerText = resultado.mensaje;
+            // Limpiar avisos anteriores al reiniciar
+            document.getElementById('avisosXml').style.display = 'none';
+            document.getElementById('avisosXml').innerText = '';
         });
+
         // Boton Cargar XML
         document.getElementById('btnCargar').addEventListener('click', async () => {
             const inputArchivo = document.getElementById('archivoXml');
+            const avisosEl = document.getElementById('avisosXml');
             
             // Validar que el usuario haya seleccionado un archivo
             if (inputArchivo.files.length === 0) {
@@ -52,31 +65,39 @@
             const formData = new FormData();
             formData.append("archivo", inputArchivo.files[0]);
 
-            //Enviar archivo al backend para procesarlo
+            // Enviar archivo al backend para procesarlo
             document.getElementById('mensajeEstado').innerText = "Procesando XML...";
+            avisosEl.style.display = 'none';
+            avisosEl.innerText = '';
 
             try {
                 const respuesta = await fetch('/api/cargar-xml', {
                     method: 'POST',
                     body: formData
-            });
+                });
 
-            const resultado = await respuesta.json();
+                const resultado = await respuesta.json();
                 document.getElementById('mensajeEstado').innerText = resultado.mensaje;
+
+                // Mostrar avisos individuales si los hay
+                if (resultado.avisos && resultado.avisos.length > 0) {
+                    avisosEl.innerText = resultado.avisos;
+                    avisosEl.style.display = 'block';
+                }
             } catch (error) {
                 document.getElementById('mensajeEstado').innerText = "Error de conexión al subir el archivo.";
             }
         }); 
+
         // Boton Graficar
         document.getElementById('btnGraficar').addEventListener('click', async () => {
             const categoria = document.getElementById('nombreCategoria').value.trim();
-                if (!categoria) {
-                    alert("Por favor ingresa el nombre de una categoría.");
-                    return;
-                }
+            if (!categoria) {
+                alert("Por favor ingresa el nombre de una categoría.");
+                return;
+            }
             document.getElementById('mensajeGrafica').innerText = "Generando gráfica (Graphviz)...";
             document.getElementById('imgResultado').style.display = 'none';
-           
            
             try {
                 const respuesta = await fetch(`/api/grafica/${encodeURIComponent(categoria)}`);

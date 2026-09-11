@@ -1,0 +1,7 @@
+digraph G {
+  node [shape=record, style=filled, fillcolor=lightblue, fontname="Arial"];
+  rankdir=TB;
+  node2001 [label="{ ISBN: 2001 | El Aleph | Jorge Luis Borges }"];
+  node2002 [label="{ ISBN: 2002 | 1984 | George Orwell }"];
+  node2001 -> node2002;
+}

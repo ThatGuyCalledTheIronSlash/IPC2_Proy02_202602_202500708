@@ -3,68 +3,78 @@ using Backend.TDA.Categoria;
 
 namespace Backend.Modelo
 {
+    /// <summary>
+    /// Modelo que gestiona la estructura jerárquica de categorías.
+    /// Mantiene las categorías raíz (nivel 0) y un índice global
+    /// para búsquedas rápidas O(log n) por nombre.
+    /// 
+    /// Catalogo.cs delega toda la gestión de categorías a esta clase
+    /// para evitar duplicación de lógica.
+    /// </summary>
     public class ArbolCategorias
     {
-        // Raíz del árbol que contiene las categorías principales (nivel 0).
+        // Categorías principales (sin padre), organizadas alfabéticamente.
         public BSTCategorias CategoriasPrincipales { get; private set; }
 
-       // Índice global para búsquedas rápidas de categorías por nombre.
+        // Índice global para búsquedas rápidas de cualquier categoría por nombre.
         private BSTCategorias indiceGlobal;
 
-
-       // Constructor que inicializa el árbol de categorías y el índice global. 
         public ArbolCategorias()
         {
             CategoriasPrincipales = new BSTCategorias();
             indiceGlobal = new BSTCategorias();
         }
 
-//-------------Métodos para agregar, buscar y reiniciar categorías-----------------
+        /// <summary>
+        /// Agrega una nueva categoría al árbol jerárquico.
+        /// Si nombrePadre es null, se inserta como categoría raíz.
+        /// Los duplicados se ignoran silenciosamente (carga XML incremental).
+        /// </summary>
         public void AgregarCategoria(string nombre, string nombrePadre = null)
         {
-            //Validar unicidad (no pueden haber 2 categorías con el mismo nombre)
+            // Si ya existe, la ignoramos (XML incremental puede traer repetidas)
             if (indiceGlobal.BuscarPorNombre(nombre) != null)
             {
-                throw new InvalidOperationException($"La categoría '{nombre}' ya existe en el catálogo.");
+                return;
             }
 
-            NodoCategoria padre = null;
+            NodoCategoria nuevaCategoria = new NodoCategoria(nombre);
 
-            // Si se especificó un padre, lo buscamos rápidamente en el índice global
-            if (!string.IsNullOrWhiteSpace(nombrePadre))
+            if (!string.IsNullOrEmpty(nombrePadre))
             {
-                padre = indiceGlobal.BuscarPorNombre(nombrePadre);
+                NodoCategoria padre = indiceGlobal.BuscarPorNombre(nombrePadre);
                 if (padre == null)
                 {
-                    throw new InvalidOperationException(
+                    throw new Exception(
                         $"No se puede agregar '{nombre}' porque la categoría padre '{nombrePadre}' no existe.");
                 }
-            }
 
-            //Crear el nuevo nodo para la categoría
-            NodoCategoria nuevaCategoria = new NodoCategoria(nombre, padre);
-
-            //Insertar en la estructura jerárquica (como raíz o como hijo del padre)
-            if (padre == null)
-            {
-                CategoriasPrincipales.Insertar(nuevaCategoria);
+                nuevaCategoria.Padre = padre;
+                padre.Hijos.Insertar(nuevaCategoria);
             }
             else
             {
-                padre.Hijos.Insertar(nuevaCategoria);
+                // Es una categoría raíz (Ej: "Tecnologia", "Literatura")
+                CategoriasPrincipales.Insertar(nuevaCategoria);
             }
 
-            //Agregar la referencia al índice global para futuras búsquedas súper rápidas
+            // Registrar en el índice global
             indiceGlobal.Insertar(nuevaCategoria);
         }
 
-// Método para buscar una categoría por nombre utilizando el índice global
-        public NodoCategoria ObtenerCategoria(string nombre)
+        /// <summary>
+        /// Busca una categoría por nombre usando el índice global. O(log n).
+        /// Retorna null si no se encuentra.
+        /// </summary>
+        public NodoCategoria BuscarCategoria(string nombre)
         {
             return indiceGlobal.BuscarPorNombre(nombre);
         }
-// Método para reiniciar el catálogo de categorías
-        public void InicializarCatalogo()
+
+        /// <summary>
+        /// Reinicia completamente el árbol, eliminando todas las categorías.
+        /// </summary>
+        public void Reiniciar()
         {
             CategoriasPrincipales = new BSTCategorias();
             indiceGlobal = new BSTCategorias();

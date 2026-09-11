@@ -17,10 +17,10 @@ app.UseDefaultFiles();
 // 3. Habilitamos la carpeta "wwwroot" para que los navegadores puedan descargar el CSS
 app.UseStaticFiles();  
 
-// 4. Creamos nuestra primera ruta (API Endpoint) para el botón "Inicializar"
+// 4. Endpoint para el botón "Inicializar"
 app.MapPost("/api/inicializar", () => 
 {
-    catalogoGlobal.InicializarCatalogo(); // Llama al método que hiciste en Catalogo.cs
+    catalogoGlobal.InicializarCatalogo();
     return Results.Ok(new { mensaje = "Catálogo inicializado con éxito y memoria limpia." });
 });
 
@@ -32,21 +32,34 @@ app.MapPost("/api/cargar-xml", async (IFormFile archivo) =>
     {
         return Results.BadRequest(new { mensaje = "No se recibió ningún archivo." });
     }
-    // 1. Crear una ruta temporal segura en la PC para guardar el XML
+
     var rutaTemporal = Path.GetTempFileName();
-    // 2. Descargar el archivo desde la web al disco duro
+
     using (var stream = new FileStream(rutaTemporal, FileMode.Create))
     {
         await archivo.CopyToAsync(stream);
     }
+
     try
     {
-        // 3. Llamar a tu clase CargarXML que hicimos anteriormente
-        CargarXML.LeerArchivo(rutaTemporal, catalogoGlobal);
-        
-        // 4. Borrar el archivo temporal porque ya lo metimos a nuestros árboles
+        // LeerArchivo ahora devuelve los avisos acumulados
+        string avisos = CargarXML.LeerArchivo(rutaTemporal, catalogoGlobal);
+
         File.Delete(rutaTemporal);
-        return Results.Ok(new { mensaje = "¡Archivo XML procesado e ingresado al catálogo con éxito!" });
+
+        // Si hay avisos, los incluimos en la respuesta para que el usuario los vea
+        if (!string.IsNullOrWhiteSpace(avisos))
+        {
+            return Results.Ok(new { 
+                mensaje = "XML procesado con algunos avisos.",
+                avisos = avisos.Trim()
+            });
+        }
+
+        return Results.Ok(new { 
+            mensaje = "¡Archivo XML procesado e ingresado al catálogo con éxito!",
+            avisos = "" 
+        });
     }
     catch (Exception ex)
     {
@@ -58,7 +71,8 @@ app.MapPost("/api/cargar-xml", async (IFormFile archivo) =>
 // 6. Endpoint para generar y obtener la gráfica de Graphviz
 app.MapGet("/api/grafica/{categoria}", (string categoria) =>
 {
-    var nodoCategoria = catalogoGlobal.IndiceGlobalCategorias.BuscarPorNombre(categoria);
+    // Usamos BuscarCategoria del Catálogo (que delega a ArbolCategorias)
+    var nodoCategoria = catalogoGlobal.BuscarCategoria(categoria);
     if (nodoCategoria == null)
     {
         return Results.NotFound(new { mensaje = $"La categoría '{categoria}' no existe en el catálogo." });
@@ -70,12 +84,14 @@ app.MapGet("/api/grafica/{categoria}", (string categoria) =>
         Directory.CreateDirectory(carpetaImg);
     }
 
-    var rutaSalida = Path.Combine(carpetaImg, "grafica_libros.png");
+    // Nombre único por categoría para que no se sobreescriban las gráficas
+    string nombreArchivo = $"grafica_{categoria}.png";
+    var rutaSalida = Path.Combine(carpetaImg, nombreArchivo);
 
     try
     {
         ReporteGraphviz.GenerarGraficaLibros(nodoCategoria.LibrosDirectos, rutaSalida);
-        string urlImagen = $"/img/grafica_libros.png?t={DateTime.Now.Ticks}";
+        string urlImagen = $"/img/{nombreArchivo}?t={DateTime.Now.Ticks}";
         return Results.Ok(new { url = urlImagen, mensaje = "¡Gráfica generada con éxito!" });
     }
     catch (Exception ex)
@@ -84,4 +100,4 @@ app.MapGet("/api/grafica/{categoria}", (string categoria) =>
     }
 });
 
- app.Run();
+app.Run();

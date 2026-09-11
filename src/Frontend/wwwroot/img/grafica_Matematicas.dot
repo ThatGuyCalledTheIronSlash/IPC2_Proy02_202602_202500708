@@ -1,0 +1,5 @@
+digraph G {
+  node [shape=record, style=filled, fillcolor=lightblue, fontname="Arial"];
+  rankdir=TB;
+  node1001 [label="{ ISBN: 1001 | Calculo Diferencial | James Stewart }"];
+}

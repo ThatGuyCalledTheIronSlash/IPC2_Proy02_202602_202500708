@@ -1,78 +1,62 @@
 using System;
+using Backend.Modelo;
 using Backend.TDA.Categoria;
 using Backend.TDA.Libros;
 
 namespace Backend.Servicios
 {
     /// <summary>
-    /// Actúa como el motor principal del sistema (Gestor).
-    /// Mantiene referencias a los índices globales para búsquedas rápidas (O(log n))
-    /// y gestiona la lógica de negocio para conectar libros con categorías.
+    /// Gestor principal del sistema. Coordina la relación entre
+    /// el árbol de categorías y el índice global de libros.
+    /// 
+    /// Delega la gestión de categorías a ArbolCategorias (Modelo)
+    /// para mantener una sola fuente de verdad y evitar duplicación.
     /// </summary>
     public class Catalogo
     {
-        // 1. Índice global de libros. Permite buscar cualquier ISBN rápidamente
-        //    sin importar en qué categoría o subcategoría se encuentre.
+        // Índice global de libros por ISBN. Permite buscar cualquier libro
+        // rápidamente sin importar en qué categoría se encuentre.
         public BSTLibros IndiceGlobalLibros { get; private set; }
 
-        // 2. Índice global de categorías. Sirve para saber si una categoría
-        //    ya existe al leer el XML o registrar un libro, sin tener que
-        //    recorrer todo el árbol jerárquico.
-        public BSTCategorias IndiceGlobalCategorias { get; private set; }
+        // Árbol jerárquico de categorías (modelo delegado).
+        // Toda la lógica de agregar/buscar categorías vive aquí.
+        private ArbolCategorias arbolCategorias;
 
-        // 3. Árbol de categorías raíz. Guarda únicamente las categorías
-        //    que NO tienen padre. A partir de aquí se "cuelga" todo el organigrama.
-        public BSTCategorias CategoriasPrincipales { get; private set; }
+        // Propiedad para acceso externo a las categorías raíz
+        // (necesaria para el endpoint de gráfica y futuros endpoints de jerarquía).
+        public ArbolCategorias Categorias => arbolCategorias;
 
         public Catalogo()
         {
             IndiceGlobalLibros = new BSTLibros();
-            IndiceGlobalCategorias = new BSTCategorias();
-            CategoriasPrincipales = new BSTCategorias();
+            arbolCategorias = new ArbolCategorias();
         }
 
         // ====================================================================
-        // GESTIÓN DE CATEGORÍAS
+        // GESTIÓN DEL CATÁLOGO
         // ====================================================================
-                // Método para borrar todo y reiniciar el sistema
+
+        /// <summary>
+        /// Reinicia completamente el catálogo (categorías y libros).
+        /// </summary>
         public void InicializarCatalogo()
         {
             IndiceGlobalLibros = new BSTLibros();
-            IndiceGlobalCategorias = new BSTCategorias();
-            CategoriasPrincipales = new BSTCategorias();
+            arbolCategorias.Reiniciar();
         }
+
+        // ====================================================================
+        // GESTIÓN DE CATEGORÍAS (delegada a ArbolCategorias)
+        // ====================================================================
+
         public void AgregarCategoria(string nombre, string nombrePadre = null)
         {
-            // Validar si la categoría ya existe (el XML es incremental y puede venir repetida)
-            if (IndiceGlobalCategorias.BuscarPorNombre(nombre) != null)
-            {
-                return; // Ya existe, simplemente la ignoramos
-            }
+            arbolCategorias.AgregarCategoria(nombre, nombrePadre);
+        }
 
-            NodoCategoria nuevaCategoria = new NodoCategoria(nombre);
-
-            if (!string.IsNullOrEmpty(nombrePadre))
-            {
-                NodoCategoria padre = IndiceGlobalCategorias.BuscarPorNombre(nombrePadre);
-                if (padre != null)
-                {
-                    // Se enlazan mutuamente
-                    nuevaCategoria.Padre = padre;
-                    padre.Hijos.Insertar(nuevaCategoria);
-                }
-                else
-                {
-                    throw new Exception($"Error: La categoría padre '{nombrePadre}' no existe.");
-                }
-            }
-            else
-            {
-                // Es una categoría raíz principal (Ej: "Tecnologia", "Literatura")
-                CategoriasPrincipales.Insertar(nuevaCategoria);
-            }
-
-            // Registrar en el índice global para futuras búsquedas O(log n)
-            IndiceGlobalCategorias.Insertar(nuevaCategoria);
+        public NodoCategoria BuscarCategoria(string nombre)
+        {
+            return arbolCategorias.BuscarCategoria(nombre);
         }
 
         // ====================================================================
@@ -81,7 +65,7 @@ namespace Backend.Servicios
 
         public void RegistrarLibro(int isbn, string titulo, string autor, string nombreCategoria)
         {
-            NodoCategoria categoria = IndiceGlobalCategorias.BuscarPorNombre(nombreCategoria);
+            NodoCategoria categoria = arbolCategorias.BuscarCategoria(nombreCategoria);
             if (categoria == null)
             {
                 throw new Exception($"La categoría '{nombreCategoria}' no existe. No se puede registrar el libro.");
@@ -94,7 +78,7 @@ namespace Backend.Servicios
             }
 
             NodoLibro nuevoLibro = new NodoLibro(isbn, titulo, autor);
-            nuevoLibro.Categoria = categoria; // El libro conoce a qué categoría pertenece
+            nuevoLibro.Categoria = categoria;
 
             // Insertar en el índice global del catálogo
             IndiceGlobalLibros.Insertar(nuevoLibro);
@@ -105,7 +89,6 @@ namespace Backend.Servicios
 
         public NodoLibro BuscarLibro(int isbn)
         {
-            // Búsqueda ultrarrápida gracias al BST global
             return IndiceGlobalLibros.BuscarPorISBN(isbn);
         }
 
