@@ -55,4 +55,33 @@ app.MapPost("/api/cargar-xml", async (IFormFile archivo) =>
 }).DisableAntiforgery(); 
 
 
+// 6. Endpoint para generar y obtener la gráfica de Graphviz
+app.MapGet("/api/grafica/{categoria}", (string categoria) =>
+{
+    var nodoCategoria = catalogoGlobal.IndiceGlobalCategorias.BuscarPorNombre(categoria);
+    if (nodoCategoria == null)
+    {
+        return Results.NotFound(new { mensaje = $"La categoría '{categoria}' no existe en el catálogo." });
+    }
+
+    var carpetaImg = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "img");
+    if (!Directory.Exists(carpetaImg))
+    {
+        Directory.CreateDirectory(carpetaImg);
+    }
+
+    var rutaSalida = Path.Combine(carpetaImg, "grafica_libros.png");
+
+    try
+    {
+        ReporteGraphviz.GenerarGraficaLibros(nodoCategoria.LibrosDirectos, rutaSalida);
+        string urlImagen = $"/img/grafica_libros.png?t={DateTime.Now.Ticks}";
+        return Results.Ok(new { url = urlImagen, mensaje = "¡Gráfica generada con éxito!" });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Error al generar gráfica: {ex.Message}");
+    }
+});
+
  app.Run();
