@@ -74,30 +74,68 @@ app.MapGet("/api/grafica/{categoria}", (string categoria) =>
     // Usamos BuscarCategoria del Catálogo (que delega a ArbolCategorias)
     var nodoCategoria = catalogoGlobal.BuscarCategoria(categoria);
     if (nodoCategoria == null)
+        {
+            return Results.NotFound(new { mensaje = $"La categoría '{categoria}' no existe en el catálogo." });
+        }
+
+        var carpetaImg = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "img");
+        if (!Directory.Exists(carpetaImg))
+        {
+            Directory.CreateDirectory(carpetaImg);
+        }
+
+        // Nombre único por categoría para que no se sobreescriban las gráficas
+        string nombreArchivo = $"grafica_{categoria}.png";
+        var rutaSalida = Path.Combine(carpetaImg, nombreArchivo);
+
+        try
+            {
+                ReporteGraphviz.GenerarGraficaLibros(nodoCategoria.LibrosDirectos, rutaSalida);
+                string urlImagen = $"/img/{nombreArchivo}?t={DateTime.Now.Ticks}";
+                return Results.Ok(new { url = urlImagen, mensaje = "¡Gráfica generada con éxito!" });
+            }
+        catch (Exception ex)
+            {
+                return Results.Problem($"Error al generar gráfica: {ex.Message}");
+            }
+    });
+
+//7. Endpoint para obtener el Libro Mayor y Menor
+app.MapGet("/api/libro-menor", () =>
+{
+    var libro = catalogoGlobal.ObtenerLibroMenorISBN();
+    if (libro == null)
     {
-        return Results.NotFound(new { mensaje = $"La categoría '{categoria}' no existe en el catálogo." });
+        return Results.NotFound(new { mensaje = "No hay libros en el catálogo." });
     }
 
-    var carpetaImg = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "img");
-    if (!Directory.Exists(carpetaImg))
-    {
-        Directory.CreateDirectory(carpetaImg);
-    }
+        return Results.Ok(new { 
+            isbn = libro.ISBN, 
+            titulo = libro.Titulo, 
+            autor = libro.Autor, 
+            categoria = libro.Categoria.Nombre
+        });
+    });
 
-    // Nombre único por categoría para que no se sobreescriban las gráficas
-    string nombreArchivo = $"grafica_{categoria}.png";
-    var rutaSalida = Path.Combine(carpetaImg, nombreArchivo);
+app.MapGet("/api/libro-mayor", () =>
+{
+    var libro = catalogoGlobal.ObtenerLibroMayorISBN();
+        if (libro == null)
+            {
+                return Results.NotFound(new { mensaje = "No hay libros en el catálogo." });
+            }
 
-    try
-    {
-        ReporteGraphviz.GenerarGraficaLibros(nodoCategoria.LibrosDirectos, rutaSalida);
-        string urlImagen = $"/img/{nombreArchivo}?t={DateTime.Now.Ticks}";
-        return Results.Ok(new { url = urlImagen, mensaje = "¡Gráfica generada con éxito!" });
-    }
-    catch (Exception ex)
-    {
-        return Results.Problem($"Error al generar gráfica: {ex.Message}");
-    }
-});
+    return Results.Ok(new { 
+        isbn = libro.ISBN, 
+        titulo = libro.Titulo, 
+        autor = libro.Autor, 
+        categoria = libro.Categoria.Nombre 
+        });
+    });
 
 app.Run();
+
+
+
+            
+

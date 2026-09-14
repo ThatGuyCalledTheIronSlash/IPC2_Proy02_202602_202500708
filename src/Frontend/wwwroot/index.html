@@ -30,15 +30,32 @@
             <!------------------------------------------------------>
             <div class="panel">
                 <h2>Ver Libros por Categoría (ascendente)</h2>
-                <input type="text" id="nombreCategoria" placeholder="Ej. Matematicas" style="padding: 10px; width: 60%; margin-bottom: 10px;" />   
-                <button id="btnGraficar">Generar Gráfica</button>
+                    <input type="text" id="nombreCategoria" placeholder="Ej. Matematicas" style="padding: 10px; width: 60%; margin-bottom: 10px;" />   
+                        <button id="btnGraficar">Generar Gráfica</button>
                 <p id="mensajeGrafica" style="font-weight: bold; color: #2980b9;"></p>
                 <!--Imagen Generada-->
                 <div style="margin-top: 20px;">
                     <img id="imgResultado" src="" alt="Gráfica de libros" style="max-width: 100%; display: none; border: 1px solid #ccc; border-radius: 5px; padding: 10px; background: white;" />
                 </div>
             </div>
+            <!------------------------------------------------------>
+            <div class = "panel">   
+                <h2>Obtener Libro con Mayor y Menor ISBN</h2>
+                    <button id="btnMenor" style="background-color: #27ae60;">⬇️ Ver Menor ISBN</button>
+                    <button id="btnMayor" style="background-color: #c0392b;">⬆️ Ver Mayor ISBN</button>
+            <p id="mensajeExtremos" style="font-weight: bold; color: #d35400;"></p>
+            
+            <!---------Cuadro de información del Libro----------------->
+            <div id="resultadoExtremos" style="margin-top: 15px; padding: 15px; background: #e8f4f8; border-radius: 5px; display: none; text-align: left;">
+                <h3 id="extTitulo" style="margin-top: 0; color: #2980b9; text-align: center;"></h3>
+                <p><strong>ISBN:</strong> <span id="extIsbn"></span></p>
+                <p><strong>Autor:</strong> <span id="extAutor"></span></p>
+                <p><strong>Categoría:</strong> <span id="extCategoria"></span></p>
+            </div>
         </div>
+
+
+        
 
 <!-----------script para manejar los eventos de los botones y la carga de archivos--------------->
     <script>
@@ -115,6 +132,36 @@
                 document.getElementById('mensajeGrafica').innerText = "Error de conexión al generar la gráfica.";
             }
         });
+        // Botones Menor y Mayor
+            // Función para buscar libro con menor o mayor ISBN
+            async function buscarExtremo(rutaApi) {
+                // Esconder cuadro anterior y mostrar mensaje de carga
+                document.getElementById('resultadoExtremos').style.display = 'none';
+                document.getElementById('mensajeExtremos').innerText = 'Buscando...';
+                try {
+                    const respuesta = await fetch(rutaApi);
+                    const resultado = await respuesta.json();
+                    if (respuesta.ok) {
+                        // Llenar los datos en el HTML
+                        document.getElementById('extTitulo').innerText = resultado.titulo;
+                        document.getElementById('extIsbn').innerText = resultado.isbn;
+                        document.getElementById('extAutor').innerText = resultado.autor;
+                        document.getElementById('extCategoria').innerText = resultado.categoria;
+                        
+                        // Mostrar el cuadro de resultados y limpiar mensaje
+                        document.getElementById('resultadoExtremos').style.display = 'block';
+                        document.getElementById('mensajeExtremos').innerText = '';
+                    } else {
+                        document.getElementById('mensajeExtremos').innerText = resultado.mensaje;
+                    }
+                } catch (error) {
+                    document.getElementById('mensajeExtremos').innerText = "Error de conexión con el servidor.";
+                }
+            }
+
+            // Asignar eventos a los botones
+            document.getElementById('btnMenor').addEventListener('click', () => buscarExtremo('/api/libro-menor'));
+            document.getElementById('btnMayor').addEventListener('click', () => buscarExtremo('/api/libro-mayor'));
     </script>    
     
     </body>
