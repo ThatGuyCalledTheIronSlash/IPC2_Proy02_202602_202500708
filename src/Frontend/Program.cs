@@ -132,10 +132,30 @@ app.MapGet("/api/libro-mayor", () =>
         categoria = libro.Categoria.Nombre 
         });
     });
+//8. Endpoint para registrar un libro manualmente
+app.MapPost("/api/registrar-libro", (DatosLibro nuevoLibro) =>
+{
+    try
+    {
+        // Llamamos a tu método que ya tiene toda la validación
+        catalogoGlobal.RegistrarLibro(nuevoLibro.Isbn, nuevoLibro.Titulo, nuevoLibro.Autor, nuevoLibro.Categoria);
+        
+        return Results.Ok(new { mensaje = $"¡El libro '{nuevoLibro.Titulo}' fue guardado con éxito!" });
+    }
+    catch (Exception ex)
+    {
+        // Si el libro ya existe o la categoría no existe, tu clase Catalogo tirará una Excepción y la atrapamos aquí
+        return Results.BadRequest(new { mensaje = ex.Message });
+    }
+});
 
 app.Run();
 
+// Estructura temporal para recibir el JSON de la web
+public record DatosLibro(int Isbn, string Titulo, string Autor, string Categoria);
 
 
-            
+
+
+
 

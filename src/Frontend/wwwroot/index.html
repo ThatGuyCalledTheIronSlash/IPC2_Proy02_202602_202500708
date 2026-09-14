@@ -23,7 +23,7 @@
                 <input type="file" id="archivoXml" accept=".xml" />
                 <button id="btnCargar">Subir y Procesar</button>
                 <p id="mensajeEstado" style="font-weight: bold; color: #d35400;"></p>
-                <!-- Aquí se muestran los avisos individuales del XML (si los hay) -->
+                <!-- Avisos individuales del XML (si los hay) -->
                 <pre id="avisosXml" style="text-align: left; color: #c0392b; font-size: 0.85em; white-space: pre-wrap; display: none;"></pre>
             </div>
 
@@ -51,6 +51,26 @@
                 <p><strong>ISBN:</strong> <span id="extIsbn"></span></p>
                 <p><strong>Autor:</strong> <span id="extAutor"></span></p>
                 <p><strong>Categoría:</strong> <span id="extCategoria"></span></p>
+            </div>
+            <!------------------------------------------------------>
+            <div class="panel">
+                <h2>Registrar Nuevo Libro</h2>
+                <div style="display: flex; flex-direction: column; gap: 10px; max-width: 400px; margin: 0 auto; text-align: left;">
+                    <label>ISBN:</label>
+                    <input type="number" id="txtIsbn" placeholder="Ej. 3005" style="padding: 8px;" />
+                    
+                    <label>Título:</label>
+                    <input type="text" id="txtTitulo" placeholder="Ej. Estructuras de Datos" style="padding: 8px;" />
+                    
+                    <label>Autor:</label>
+                    <input type="text" id="txtAutor" placeholder="Ej. Joyanes Aguilar" style="padding: 8px;" />
+                    
+                    <label>Categoría (Debe existir):</label>
+                    <input type="text" id="txtCat" placeholder="Ej. Ciencias" style="padding: 8px;" />
+                    
+                    <button id="btnRegistrarLibro" style="margin-top: 10px; background-color: #8e44ad;">Guardar Libro</button>
+                </div>
+                <p id="mensajeRegistro" style="font-weight: bold; margin-top: 15px;"></p>
             </div>
         </div>
 
@@ -162,6 +182,44 @@
             // Asignar eventos a los botones
             document.getElementById('btnMenor').addEventListener('click', () => buscarExtremo('/api/libro-menor'));
             document.getElementById('btnMayor').addEventListener('click', () => buscarExtremo('/api/libro-mayor'));
+    
+    //Boton Registrar Libro
+    document.getElementById('btnRegistrarLibro').addEventListener('click', async () => {
+        const isbn = parseInt(document.getElementById('txtIsbn').value);
+        const titulo = document.getElementById('txtTitulo').value.trim();
+        const autor = document.getElementById('txtAutor').value.trim();
+        const categoria = document.getElementById('txtCat').value.trim();
+            if (!isbn || !titulo || !autor || !categoria) {
+                alert("Por favor, llena todos los campos para registrar el libro.");
+                return;
+            }
+                const mensajeEl = document.getElementById('mensajeRegistro');
+                mensajeEl.innerText = "Guardando...";
+                mensajeEl.style.color = "#333";
+            try {
+                const respuesta = await fetch('/api/registrar-libro', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ isbn, titulo, autor, categoria })
+                });
+                
+            const resultado = await respuesta.json();
+                
+            // Mostrar éxito en verde o error en rojo
+            mensajeEl.innerText = resultado.mensaje;
+            mensajeEl.style.color = respuesta.ok ? "#27ae60" : "#c0392b"; 
+                // Limpiar si todo salió bien
+                if(respuesta.ok) {
+                    document.getElementById('txtIsbn').value = '';
+                    document.getElementById('txtTitulo').value = '';
+                    document.getElementById('txtAutor').value = '';
+                    document.getElementById('txtCat').value = '';
+                }
+            } catch (error) {
+                mensajeEl.innerText = "Error de conexión con el servidor.";
+                mensajeEl.style.color = "#c0392b";
+            }
+        });
     </script>    
     
     </body>
