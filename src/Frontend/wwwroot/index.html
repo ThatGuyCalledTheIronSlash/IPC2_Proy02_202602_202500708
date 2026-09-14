@@ -102,6 +102,20 @@
                 <div id="contenedorArbol" style="margin-top: 15px; text-align: left; background: #ecf0f1; padding: 20px; border-radius: 5px; display: none;">
                 </div>
             </div>
+            <!------------------------------------------------------>
+            <div class="panel">
+                <h2>Agregar Nueva Categoría</h2>
+                <div style="display: flex; flex-direction: column; gap: 10px; max-width: 400px; margin: 0 auto; text-align: left;">
+                    <label>Nombre de Categoría:</label>
+                    <input type="text" id="txtNuevaCatNombre" placeholder="Ej. Biología" style="padding: 8px;" />
+                    
+                    <label>Nombre de la Categoría Padre (Opcional):</label>
+                    <input type="text" id="txtNuevaCatPadre" placeholder="Ej. Ciencias (déjalo vacío si es principal)" style="padding: 8px;" />
+                    
+                    <button id="btnAgregarCategoria" style="margin-top: 10px; background-color: #27ae60;">Crear Categoría</button>
+                </div>
+                <p id="mensajeCat" style="font-weight: bold; margin-top: 15px;"></p>
+            </div>
         </div>
 
 
@@ -307,24 +321,58 @@
                 }
             });
 // Ver el Arbol de Categorías
- document.getElementById('btnVerArbol').addEventListener('click', async () => {
-            const contenedor = document.getElementById('contenedorArbol');
-            contenedor.style.display = 'block';
-            contenedor.innerHTML = "<p style='text-align: center; color: #d35400;'>Cargando estructura...</p>";
-            try {
-                const respuesta = await fetch('/api/arbol-categorias');
-                const resultado = await respuesta.json();
-                
-                if (respuesta.ok) {
-                    // Pintamos el HTML literal que nos devolvió el servidor
-                    contenedor.innerHTML = resultado.html;
-                } else {
-                    contenedor.innerHTML = `<p style="color:red;">Error: ${resultado.mensaje}</p>`;
+    document.getElementById('btnVerArbol').addEventListener('click', async () => {
+                const contenedor = document.getElementById('contenedorArbol');
+                contenedor.style.display = 'block';
+                contenedor.innerHTML = "<p style='text-align: center; color: #d35400;'>Cargando estructura...</p>";
+                try {
+                    const respuesta = await fetch('/api/arbol-categorias');
+                    const resultado = await respuesta.json();
+                    
+                    if (respuesta.ok) {
+                        // Pintamos el HTML literal que nos devolvió el servidor
+                        contenedor.innerHTML = resultado.html;
+                    } else {
+                        contenedor.innerHTML = `<p style="color:red;">Error: ${resultado.mensaje}</p>`;
+                    }
+                } catch (error) {
+                    contenedor.innerHTML = "<p style='color:red;'>Error de conexión con el servidor.</p>";
                 }
-            } catch (error) {
-                contenedor.innerHTML = "<p style='color:red;'>Error de conexión con el servidor.</p>";
-            }
-        });
+            });
+// Botón Agregar Categoría
+    document.getElementById('btnAgregarCategoria').addEventListener('click', async () => {
+                const nombre = document.getElementById('txtNuevaCatNombre').value.trim();
+                const padre = document.getElementById('txtNuevaCatPadre').value.trim();
+                if (!nombre) {
+                    alert("El nombre de la categoría es obligatorio.");
+                    return;
+                }
+                const mensajeEl = document.getElementById('mensajeCat');
+                mensajeEl.innerText = "Guardando...";
+                mensajeEl.style.color = "#333";
+                try {
+                    // Mandamos los datos. Si padre está vacío, mandamos un string vacío que C# convertirá a null
+                    const respuesta = await fetch('/api/agregar-categoria', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nombre: nombre, padre: padre })
+                    });
+                    
+                    const resultado = await respuesta.json();
+                    
+                    mensajeEl.innerText = resultado.mensaje;
+                    mensajeEl.style.color = respuesta.ok ? "#27ae60" : "#c0392b";
+                    
+                    if (respuesta.ok) {
+                        document.getElementById('txtNuevaCatNombre').value = '';
+                        document.getElementById('txtNuevaCatPadre').value = '';
+                    }
+                } catch (error) {
+                    mensajeEl.innerText = "Error de conexión con el servidor.";
+                    mensajeEl.style.color = "#c0392b";
+                }
+            });
+
         </script>    
     </body>
 </html>

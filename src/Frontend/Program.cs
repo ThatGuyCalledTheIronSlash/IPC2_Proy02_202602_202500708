@@ -215,10 +215,32 @@ app.MapGet("/api/arbol-categorias", () =>
     return Results.Ok(new { html = htmlEstructura });
 });
 
+//12. Registrar nueva Categoria
+app.MapPost("/api/agregar-categoria", (DatosCategoria nuevaCat) =>
+{
+    try
+    {
+        if (string.IsNullOrWhiteSpace(nuevaCat.Nombre))
+        {
+            return Results.BadRequest(new { mensaje = "El nombre de la categoría es obligatorio." });
+        }
+        // Si mandaron el padre en blanco, lo volvemos null para que sea raíz
+        string padre = string.IsNullOrWhiteSpace(nuevaCat.Padre) ? null : nuevaCat.Padre.Trim();
+        catalogoGlobal.AgregarCategoria(nuevaCat.Nombre.Trim(), padre);
+        
+        return Results.Ok(new { mensaje = $"¡La categoría '{nuevaCat.Nombre}' se agregó correctamente!" });
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new { mensaje = ex.Message });
+    }
+});
+
 app.Run();
 
 // Estructura temporal para recibir el JSON de la web
 public record DatosLibro(int Isbn, string Titulo, string Autor, string Categoria);
+public record DatosCategoria(string Nombre, string Padre);
 
 
 
