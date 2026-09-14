@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using System.IO;
+using Backend.TDA.Categoria;
 using Backend.Servicios;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -179,22 +180,40 @@ app.MapDelete("/api/libro/{isbn:int}", (int isbn) =>
     }
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//11. Endpoint para obtener todos los libros de todas las categorías
+app.MapGet("/api/arbol-categorias", () =>
+{
+    // Si no hay categorías principales, está vacío
+    if (catalogoGlobal.Categorias.CategoriasPrincipales.EstaVacio())
+    {
+        return Results.Ok(new { html = "<p style='color:#7f8c8d;'>No hay categorías registradas en el catálogo.</p>" });
+    }
+    // Usaremos un string simple para ir construyendo el HTML de las viñetas (<ul> y <li>)
+    string htmlEstructura = "<ul style='list-style-type: square; margin-left: 20px;'>";
+    
+    // Función recursiva local: recorre el BST e imprime hijos adentro de hijos
+    void ConstruirArbolHtml(BSTCategorias bst)
+    {
+        bst.RecorridoInOrder(cat => 
+        {
+            htmlEstructura += $"<li style='margin-bottom: 5px; font-size: 16px;'><strong>{cat.Nombre}</strong>";
+            
+            // Si esta categoría tiene subcategorías, abramos otra lista dentro de este punto
+            if (!cat.Hijos.EstaVacio())
+            {
+                htmlEstructura += "<ul style='list-style-type: circle; margin-left: 20px; color: #2980b9;'>";
+                ConstruirArbolHtml(cat.Hijos);
+                htmlEstructura += "</ul>";
+            }
+            htmlEstructura += "</li>";
+        });
+    }
+    // Arrancamos el proceso desde la raíz (las categorías sin padre)
+   ConstruirArbolHtml(catalogoGlobal.Categorias.CategoriasPrincipales);
+    
+    htmlEstructura += "</ul>";
+    return Results.Ok(new { html = htmlEstructura });
+});
 
 app.Run();
 

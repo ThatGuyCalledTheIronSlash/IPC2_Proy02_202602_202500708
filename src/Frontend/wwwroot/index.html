@@ -93,6 +93,15 @@
                     <button id="btnEliminarLibro" style="background-color: #c0392b;">🗑️ Eliminar este Libro</button>
                 </div>
             </div>
+            <!------------------------------------------------------>
+            <div class="panel">
+                <h2>Organización de Categorías</h2>
+                <button id="btnVerArbol" style="background-color: #34495e;">🌳 Ver Estructura Completa</button>
+                
+                <!-- Aquí incrustaremos el código HTML que armó nuestro backend -->
+                <div id="contenedorArbol" style="margin-top: 15px; text-align: left; background: #ecf0f1; padding: 20px; border-radius: 5px; display: none;">
+                </div>
+            </div>
         </div>
 
 
@@ -297,7 +306,25 @@
                     alert("Error de conexión al intentar eliminar.");
                 }
             });
-
+// Ver el Arbol de Categorías
+ document.getElementById('btnVerArbol').addEventListener('click', async () => {
+            const contenedor = document.getElementById('contenedorArbol');
+            contenedor.style.display = 'block';
+            contenedor.innerHTML = "<p style='text-align: center; color: #d35400;'>Cargando estructura...</p>";
+            try {
+                const respuesta = await fetch('/api/arbol-categorias');
+                const resultado = await respuesta.json();
+                
+                if (respuesta.ok) {
+                    // Pintamos el HTML literal que nos devolvió el servidor
+                    contenedor.innerHTML = resultado.html;
+                } else {
+                    contenedor.innerHTML = `<p style="color:red;">Error: ${resultado.mensaje}</p>`;
+                }
+            } catch (error) {
+                contenedor.innerHTML = "<p style='color:red;'>Error de conexión con el servidor.</p>";
+            }
+        });
         </script>    
     </body>
 </html>
