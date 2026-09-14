@@ -137,7 +137,7 @@ app.MapPost("/api/registrar-libro", (DatosLibro nuevoLibro) =>
 {
     try
     {
-        // Llamamos a tu método que ya tiene toda la validación
+        // Llamamos a metodo del catálogo para registrar el libro, que internamente validará si la categoría existe y si el ISBN es único
         catalogoGlobal.RegistrarLibro(nuevoLibro.Isbn, nuevoLibro.Titulo, nuevoLibro.Autor, nuevoLibro.Categoria);
         
         return Results.Ok(new { mensaje = $"¡El libro '{nuevoLibro.Titulo}' fue guardado con éxito!" });
@@ -148,6 +148,53 @@ app.MapPost("/api/registrar-libro", (DatosLibro nuevoLibro) =>
         return Results.BadRequest(new { mensaje = ex.Message });
     }
 });
+
+//9. Endpoint para buscar libros de forma especifica por ISBN
+app.MapGet("/api/libro/{isbn:int}", (int isbn) =>
+{
+    var libro = catalogoGlobal.BuscarLibro(isbn);
+    if (libro == null)
+    {
+        return Results.NotFound(new { mensaje = $"No se encontró ningún libro con el ISBN {isbn}." });
+    }
+    return Results.Ok(new {
+        isbn = libro.ISBN,
+        titulo = libro.Titulo,
+        autor = libro.Autor,
+        categoria = libro.Categoria.Nombre
+    });
+});
+
+//10. Endpoint para eliminar libros
+app.MapDelete("/api/libro/{isbn:int}", (int isbn) =>
+{
+    try
+    {
+        catalogoGlobal.EliminarLibro(isbn);
+        return Results.Ok(new { mensaje = $"El libro con ISBN {isbn} fue eliminado exitosamente del catálogo." });
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new { mensaje = ex.Message });
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 app.Run();
 

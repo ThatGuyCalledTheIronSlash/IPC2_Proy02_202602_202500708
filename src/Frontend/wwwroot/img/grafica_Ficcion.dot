@@ -4,6 +4,4 @@ digraph G {
   node2001 [label="{ ISBN: 2001 | El Aleph | Jorge Luis Borges }"];
   node2002 [label="{ ISBN: 2002 | 1984 | George Orwell }"];
   node2001 -> node2002;
-  node30544 [label="{ ISBN: 30544 | The Fall of Reach | Eric Nylund }"];
-  node2002 -> node30544;
 }

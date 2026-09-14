@@ -72,6 +72,27 @@
                 </div>
                 <p id="mensajeRegistro" style="font-weight: bold; margin-top: 15px;"></p>
             </div>
+            <!------------------------------------------------------>
+            <div class="panel">
+            <h2>Buscar y Administrar Libro</h2>
+            <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
+                <input type="number" id="txtBuscarIsbn" placeholder="Ingrese ISBN..." style="padding: 8px; width: 200px;" />
+                <button id="btnBuscarLibro" style="background-color: #f39c12;">🔍 Buscar</button>
+            </div>
+            
+            <p id="mensajeBusqueda" style="font-weight: bold; color: #d35400;"></p>
+            <!-- Cuadro que solo aparece si el libro existe -->
+            <div id="resultadoBusqueda" style="margin-top: 15px; padding: 15px; background: #fff3e0; border-radius: 5px; display: none; text-align: left; border: 1px solid #f39c12;">
+                <h3 id="buscTitulo" style="margin-top: 0; color: #d35400; text-align: center;"></h3>
+                <p><strong>ISBN:</strong> <span id="buscIsbn"></span></p>
+                <p><strong>Autor:</strong> <span id="buscAutor"></span></p>
+                <p><strong>Categoría:</strong> <span id="buscCategoria"></span></p>
+                
+                <!-- Botón de peligro -->
+                <div style="text-align: center; margin-top: 15px;">
+                    <button id="btnEliminarLibro" style="background-color: #c0392b;">🗑️ Eliminar este Libro</button>
+                </div>
+            </div>
         </div>
 
 
@@ -79,7 +100,7 @@
 
 <!-----------script para manejar los eventos de los botones y la carga de archivos--------------->
     <script>
-        // Boton Inicializar
+// Boton Inicializar
         document.getElementById('btnInicializar').addEventListener('click', async () => {
             const respuesta = await fetch('/api/inicializar', { method: 'POST' });
             const resultado = await respuesta.json();
@@ -89,7 +110,7 @@
             document.getElementById('avisosXml').innerText = '';
         });
 
-        // Boton Cargar XML
+// Boton Cargar XML
         document.getElementById('btnCargar').addEventListener('click', async () => {
             const inputArchivo = document.getElementById('archivoXml');
             const avisosEl = document.getElementById('avisosXml');
@@ -126,7 +147,7 @@
             }
         }); 
 
-        // Boton Graficar
+// Boton Graficar
         document.getElementById('btnGraficar').addEventListener('click', async () => {
             const categoria = document.getElementById('nombreCategoria').value.trim();
             if (!categoria) {
@@ -152,7 +173,7 @@
                 document.getElementById('mensajeGrafica').innerText = "Error de conexión al generar la gráfica.";
             }
         });
-        // Botones Menor y Mayor
+// Botones Menor y Mayor
             // Función para buscar libro con menor o mayor ISBN
             async function buscarExtremo(rutaApi) {
                 // Esconder cuadro anterior y mostrar mensaje de carga
@@ -183,7 +204,7 @@
             document.getElementById('btnMenor').addEventListener('click', () => buscarExtremo('/api/libro-menor'));
             document.getElementById('btnMayor').addEventListener('click', () => buscarExtremo('/api/libro-mayor'));
     
-    //Boton Registrar Libro
+ //Boton Registrar Libro
     document.getElementById('btnRegistrarLibro').addEventListener('click', async () => {
         const isbn = parseInt(document.getElementById('txtIsbn').value);
         const titulo = document.getElementById('txtTitulo').value.trim();
@@ -220,7 +241,63 @@
                 mensajeEl.style.color = "#c0392b";
             }
         });
-    </script>    
-    
+// Boton Buscar Libro
+    document.getElementById('btnBuscarLibro').addEventListener('click', async () => {
+            const isbn = parseInt(document.getElementById('txtBuscarIsbn').value);
+            if (!isbn) {
+                alert("Por favor ingresa un ISBN válido.");
+                return;
+            }
+            document.getElementById('resultadoBusqueda').style.display = 'none';
+            const mensajeEl = document.getElementById('mensajeBusqueda');
+            mensajeEl.innerText = "Buscando...";
+            mensajeEl.style.color = "#d35400";
+            try {
+                const respuesta = await fetch(`/api/libro/${isbn}`);
+                const resultado = await respuesta.json();
+                if (respuesta.ok) {
+                    // Si existe, mostramos los datos y enseñamos el cuadro
+                    document.getElementById('buscTitulo').innerText = resultado.titulo;
+                    document.getElementById('buscIsbn').innerText = resultado.isbn;
+                    document.getElementById('buscAutor').innerText = resultado.autor;
+                    document.getElementById('buscCategoria').innerText = resultado.categoria;
+                    
+                    document.getElementById('resultadoBusqueda').style.display = 'block';
+                    mensajeEl.innerText = ""; // Borramos el texto "Buscando..."
+                } else {
+                    mensajeEl.innerText = resultado.mensaje; // "Libro no encontrado"
+                }
+            } catch (error) {
+                mensajeEl.innerText = "Error de conexión al buscar.";
+            }
+        });
+//Botón Eliminar Libro
+    document.getElementById('btnEliminarLibro').addEventListener('click', async () => {
+                const isbn = parseInt(document.getElementById('buscIsbn').innerText);
+                
+                // Pregunta de seguridad antes de borrar
+                if(!confirm(`¿Estás 100% seguro de que deseas eliminar el libro con ISBN ${isbn}?`)) {
+                    return; // Si el usuario cancela, no hacemos nada
+                }
+                try {
+                    const respuesta = await fetch(`/api/libro/${isbn}`, { method: 'DELETE' });
+                    const resultado = await respuesta.json();
+                    if (respuesta.ok) {
+                        // Ocultamos el cuadro del libro porque ya no existe
+                        document.getElementById('resultadoBusqueda').style.display = 'none';
+                        document.getElementById('txtBuscarIsbn').value = '';
+                        
+                        const mensajeEl = document.getElementById('mensajeBusqueda');
+                        mensajeEl.innerText = resultado.mensaje;
+                        mensajeEl.style.color = "#27ae60"; // Verde de éxito
+                    } else {
+                        alert("No se pudo eliminar: " + resultado.mensaje);
+                    }
+                } catch (error) {
+                    alert("Error de conexión al intentar eliminar.");
+                }
+            });
+
+        </script>    
     </body>
 </html>
