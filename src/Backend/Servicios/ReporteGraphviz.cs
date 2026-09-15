@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using Backend.TDA.Categoria;
 using System.Diagnostics;
 using Backend.TDA.Libros;
 
@@ -8,10 +9,8 @@ namespace Backend.Servicios
 {
     public class ReporteGraphviz
     {
-        /// <summary>
-        /// Genera una imagen PNG usando Graphviz que muestra los libros
-        /// en estricto orden ascendente por ISBN.
-        /// </summary>
+
+        /// Genera una imagen PNG usando Graphviz que muestra los librosen estricto orden ascendente por ISBN.
         public static void GenerarGraficaLibros(BSTLibros libros, string rutaSalida)
         {
             if (libros.EstaVacio())
@@ -70,10 +69,8 @@ namespace Backend.Servicios
             }
         }
 
-        /// <summary>
+
         /// Escapa caracteres especiales que romperían la sintaxis DOT
-        /// dentro de labels tipo record ({, }, |, <, >, ").
-        /// </summary>
         private static string EscaparDOT(string texto)
         {
             if (string.IsNullOrEmpty(texto)) return texto;
@@ -95,6 +92,49 @@ namespace Backend.Servicios
                 }
             }
             return resultado.ToString();
+        }
+
+//Genera un Arbol de todas las categorias
+        public static void GenerarGraficaCategorias(BSTCategorias categoriasPrincipales, string rutaSalida)
+        {
+            if (categoriasPrincipales.EstaVacio()) return;
+            string dotContent = "digraph G {\n";
+            dotContent += "  node [shape=folder, style=filled, fillcolor=\"#a2d9ce\", fontname=\"Arial\"];\n";
+            dotContent += "  rankdir=TB;\n"; // TB = De arriba hacia abajo
+            // Función local recursiva para dibujar las conexiones Padre -> Hijo
+            void DibujarJerarquia(NodoCategoria cat)
+            {
+                dotContent += $"  \"{cat.Nombre}\";\n"; // Asegurar que el nodo se dibuje
+                
+                cat.Hijos.RecorridoInOrder(hijo => 
+                {
+                    dotContent += $"  \"{cat.Nombre}\" -> \"{hijo.Nombre}\";\n";
+                    DibujarJerarquia(hijo);
+                });
+            }
+            // Iniciamos el dibujo desde cada categoría raíz
+            categoriasPrincipales.RecorridoInOrder(raiz => {
+                DibujarJerarquia(raiz);
+            });
+            dotContent += "}\n";
+            string dotPath = rutaSalida.Replace(".png", ".dot");
+            File.WriteAllText(dotPath, dotContent);
+            try
+            {
+                ProcessStartInfo info = new ProcessStartInfo("dot")
+                {
+                    Arguments = $"-Tpng \"{dotPath}\" -o \"{rutaSalida}\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using (Process proc = Process.Start(info)) { proc.WaitForExit(); }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error al ejecutar Graphviz: " + ex.Message);
+            }
         }
     }
 }

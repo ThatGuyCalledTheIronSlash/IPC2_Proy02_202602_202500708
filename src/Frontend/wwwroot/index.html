@@ -94,12 +94,25 @@
                 </div>
             </div>
             <!------------------------------------------------------>
+            <div class="panel" style="background: #e8f8f5; border-left: 5px solid #1abc9c;">
+                <h2>📊 Dashboard General</h2> <!--Dashboard general para las Categortias--> 
+                    <button id="btnActualizarDash">↻ Actualizar Estadísticas</button>
+
+            <div style="display: flex; justify-content: space-around; margin-top: 15px; font-size: 20px;">
+                <p>Total Categorías: <strong id="lblTotalCat" style="color: #2980b9;">0</strong></p>
+                <p>Total Libros: <strong id="lblTotalLibros" style="color: #c0392b;">0</strong></p>
+                </div>
+            </div>
+            <!------------------------------------------------------>
             <div class="panel">
                 <h2>Organización de Categorías</h2>
-                <button id="btnVerArbol" style="background-color: #34495e;">🌳 Ver Estructura Completa</button>
-                
-                <!-- Aquí incrustaremos el código HTML que armó nuestro backend -->
-                <div id="contenedorArbol" style="margin-top: 15px; text-align: left; background: #ecf0f1; padding: 20px; border-radius: 5px; display: none;">
+                <div style="display: flex; justify-content: center; gap: 10px;">
+                    <button id="btnVerArbol" style="background-color: #34495e;">📄 Ver como Lista</button>
+                    <button id="btnGraficarArbol" style="background-color: #8e44ad;">🖼️ Generar Gráfica Graphviz</button>
+                </div>
+            <div id="contenedorArbol" style="margin-top: 15px; text-align: left; background: #ecf0f1; padding: 20px; border-radius: 5px; display: none;"></div>
+                <div style="margin-top: 15px;">
+                    <img id="imgArbolCat" src="" style="max-width: 100%; display: none; border-radius: 5px; background: white;" />
                 </div>
             </div>
             <!------------------------------------------------------>
@@ -115,6 +128,14 @@
                     <button id="btnAgregarCategoria" style="margin-top: 10px; background-color: #27ae60;">Crear Categoría</button>
                 </div>
                 <p id="mensajeCat" style="font-weight: bold; margin-top: 15px;"></p>
+            </div>
+<!----Seccion de Ayuda------------->
+        <div class="panel" style="background: #acc789; border-left: 5px solid #2f6d78;">
+            <h2>ℹ️ Información y Ayuda</h2>
+                <p><strong>Desarrollador:</strong> Irons254</p>
+                <p><strong>Carnet:</strong> 202500708 </p>
+                <p><strong>Curso:</strong> IPC2 - Proyecto 2</p>
+                <a href="#" style="display: inline-block; margin-top: 10px; padding: 10px 15px; background: #d35400; color: white; text-decoration: none; border-radius: 5px;">📄 Descargar Ensayo/Documentación</a>
             </div>
         </div>
 
@@ -372,7 +393,30 @@
                     mensajeEl.style.color = "#c0392b";
                 }
             });
-
+//Logica del Dashboard
+document.getElementById('btnActualizarDash').addEventListener('click', async () => {
+            try {
+                const res = await fetch('/api/dashboard');
+                const stats = await res.json();
+                document.getElementById('lblTotalCat').innerText = stats.categorias;
+                document.getElementById('lblTotalLibros').innerText = stats.libros;
+            } catch(e) { console.error("Error cargando dashboard"); }
+        });
+//Logica del Graphviz de Categorias
+document.getElementById('btnGraficarArbol').addEventListener('click', async () => {
+            document.getElementById('contenedorArbol').style.display = 'none'; // ocultar lista
+            document.getElementById('imgArbolCat').style.display = 'none';
+            
+            try {
+                const res = await fetch('/api/grafica-arbol');
+                const data = await res.json();
+                if(res.ok) {
+                    const img = document.getElementById('imgArbolCat');
+                    img.src = data.url;
+                    img.style.display = 'block';
+                }
+            } catch(e) { alert("Error al generar gráfica del árbol."); }
+        });
         </script>    
     </body>
 </html>

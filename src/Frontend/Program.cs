@@ -236,6 +236,40 @@ app.MapPost("/api/agregar-categoria", (DatosCategoria nuevaCat) =>
     }
 });
 
+//13. Endpoint para Dashboard: Cantidad de Libros y Categorias
+app.MapGet("/api/dashboard", () =>
+{
+    int totalLibros = 0;
+    int totalCategorias = 0;
+        // Contar libros es fácil recorriendo el índice global
+            catalogoGlobal.IndiceGlobalLibros.RecorridoInOrder(l => totalLibros++);
+        // Contar categorías requiere una pequeña recursividad por el árbol
+            void ContarCategorias(BSTCategorias bst)
+                {
+                    bst.RecorridoInOrder(c => {
+                        totalCategorias++;
+                        ContarCategorias(c.Hijos);
+                    });
+                }
+    
+        if (!catalogoGlobal.Categorias.CategoriasPrincipales.EstaVacio())
+            {
+                ContarCategorias(catalogoGlobal.Categorias.CategoriasPrincipales);
+            }
+             return Results.Ok(new { libros = totalLibros, categorias = totalCategorias });
+});
+//14.Endpoint para Arbol de Categorias en Graphviz
+app.MapGet("/api/grafica-arbol", () =>
+{
+    var carpetaImg = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "img");
+    var rutaSalida = Path.Combine(carpetaImg, "grafica_arbol.png");
+    
+    ReporteGraphviz.GenerarGraficaCategorias(catalogoGlobal.Categorias.CategoriasPrincipales, rutaSalida);
+    
+    return Results.Ok(new { url = $"/img/grafica_arbol.png?t={DateTime.Now.Ticks}" });
+});
+
+
 app.Run();
 
 // Estructura temporal para recibir el JSON de la web
