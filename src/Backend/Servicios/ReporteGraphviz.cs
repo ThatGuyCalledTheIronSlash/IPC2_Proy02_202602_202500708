@@ -23,7 +23,7 @@ namespace Backend.Servicios
             sb.AppendLine("  node [shape=record, style=filled, fillcolor=lightblue, fontname=\"Arial\"];");
             sb.AppendLine("  rankdir=TB;"); // TB = Top to Bottom
 
-            NodoLibro libroAnterior = null;
+            NodoLibro? libroAnterior = null;
 
             // Recorrido In-Order garantiza orden ascendente por ISBN
             libros.RecorridoInOrder(libroActual =>
@@ -58,9 +58,9 @@ namespace Backend.Servicios
                     CreateNoWindow = true
                 };
 
-                using (Process proc = Process.Start(info))
+                using (Process? proc = Process.Start(info))
                 {
-                    proc.WaitForExit();
+                    proc?.WaitForExit();
                 }
             }
             catch (Exception ex)
@@ -130,9 +130,9 @@ namespace Backend.Servicios
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
-                using (Process proc = Process.Start(info))
+                using (Process? proc = Process.Start(info))
                 {
-                    proc.WaitForExit();
+                    proc?.WaitForExit();
                 }
             }
             catch (Exception ex)

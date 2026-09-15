@@ -8,11 +8,10 @@ using Backend.Servicios;
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
-// 1. Instanciamos el Gestor Global (Catálogo)
-// Esta variable vivirá en memoria mientras el servidor esté encendido.
+// 1. Instancia del Gestor Global (Catálogo)
 var catalogoGlobal = new Catalogo();
 
-// 2. Le decimos al servidor que busque y sirva "index.html" por defecto al entrar a la raíz "/"
+// 2. Servidor busca y sirve "index.html" por defecto al entrar a la raíz "/"
 app.UseDefaultFiles(); 
 
 // 3. Habilitamos la carpeta "wwwroot" para que los navegadores puedan descargar el CSS
@@ -114,7 +113,7 @@ app.MapGet("/api/libro-menor", () =>
             isbn = libro.ISBN, 
             titulo = libro.Titulo, 
             autor = libro.Autor, 
-            categoria = libro.Categoria.Nombre
+            categoria = libro.Categoria?.Nombre ?? ""
         });
     });
 
@@ -130,7 +129,7 @@ app.MapGet("/api/libro-mayor", () =>
         isbn = libro.ISBN, 
         titulo = libro.Titulo, 
         autor = libro.Autor, 
-        categoria = libro.Categoria.Nombre 
+        categoria = libro.Categoria?.Nombre ?? "" 
         });
     });
 //8. Endpoint para registrar un libro manualmente
@@ -162,7 +161,7 @@ app.MapGet("/api/libro/{isbn:int}", (int isbn) =>
         isbn = libro.ISBN,
         titulo = libro.Titulo,
         autor = libro.Autor,
-        categoria = libro.Categoria.Nombre
+        categoria = libro.Categoria?.Nombre ?? ""
     });
 });
 
@@ -219,7 +218,7 @@ app.MapPost("/api/agregar-categoria", (DatosCategoria nuevaCat) =>
             return Results.BadRequest(new { mensaje = "El nombre de la categoría es obligatorio." });
         }
         // Si mandaron el padre en blanco, lo volvemos null para que sea raíz
-        string padre = string.IsNullOrWhiteSpace(nuevaCat.Padre) ? null : nuevaCat.Padre.Trim();
+        string? padre = string.IsNullOrWhiteSpace(nuevaCat.Padre) ? null : nuevaCat.Padre.Trim();
         catalogoGlobal.AgregarCategoria(nuevaCat.Nombre.Trim(), padre);
         
         return Results.Ok(new { mensaje = $"¡La categoría '{nuevaCat.Nombre}' se agregó correctamente!" });
@@ -288,7 +287,7 @@ app.MapGet("/api/todos-libros", () =>
         primero = false;
         string titulo = libro.Titulo.Replace("\\", "\\\\").Replace("\"", "\\\"");
         string autor = libro.Autor.Replace("\\", "\\\\").Replace("\"", "\\\"");
-        string cat = libro.Categoria.Nombre.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        string cat = (libro.Categoria?.Nombre ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"");
         sb.Append($"{{\"isbn\":{libro.ISBN},\"titulo\":\"{titulo}\",\"autor\":\"{autor}\",\"categoria\":\"{cat}\"}}");
     });
     sb.Append("]");
@@ -301,7 +300,7 @@ app.Run();
 
 // Estructura temporal para recibir el JSON de la web
 public record DatosLibro(int Isbn, string Titulo, string Autor, string Categoria);
-public record DatosCategoria(string Nombre, string Padre);
+public record DatosCategoria(string Nombre, string? Padre);
 
 
 

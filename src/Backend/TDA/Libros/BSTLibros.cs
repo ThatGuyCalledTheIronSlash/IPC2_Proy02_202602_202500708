@@ -2,21 +2,13 @@ using System;
 
 namespace Backend.TDA.Libros
 {
-    /// <summary>
-    /// Árbol binario de búsqueda (TDA propio) indexado por ISBN.
-    /// La estructura del árbol (izquierdo/derecho) vive en una clase
-    /// interna privada (Nodo), separada de NodoLibro. Así, el mismo
-    /// NodoLibro puede insertarse en varios BSTLibros distintos
-    /// (por ejemplo: el índice global del catálogo y el índice local
-    /// de su categoría) sin que ambos árboles se pisen entre sí.
-    /// </summary>
     public class BSTLibros
     {
         private class Nodo
         {
             public NodoLibro Libro;
-            public Nodo Izquierdo;
-            public Nodo Derecho;
+            public Nodo? Izquierdo;
+            public Nodo? Derecho;
 
             public Nodo(NodoLibro libro)
             {
@@ -24,7 +16,7 @@ namespace Backend.TDA.Libros
             }
         }
 
-        private Nodo raiz;
+        private Nodo? raiz;
 
         public BSTLibros()
         {
@@ -36,15 +28,13 @@ namespace Backend.TDA.Libros
             return raiz == null;
         }
 
-        // ---------------------------------------------------------
-        // INSERCIÓN
-        // ---------------------------------------------------------
+//Insercion
         public void Insertar(NodoLibro nuevoLibro)
         {
             raiz = InsertarRecursivo(raiz, nuevoLibro);
         }
 
-        private Nodo InsertarRecursivo(Nodo actual, NodoLibro nuevoLibro)
+        private Nodo InsertarRecursivo(Nodo? actual, NodoLibro nuevoLibro)
         {
             if (actual == null)
             {
@@ -68,16 +58,14 @@ namespace Backend.TDA.Libros
             return actual;
         }
 
-        // ---------------------------------------------------------
-        // BÚSQUEDA
-        // ---------------------------------------------------------
-        public NodoLibro BuscarPorISBN(int isbn)
+//Busqueda
+        public NodoLibro? BuscarPorISBN(int isbn)
         {
-            Nodo encontrado = BuscarRecursivo(raiz, isbn);
+            Nodo? encontrado = BuscarRecursivo(raiz, isbn);
             return encontrado?.Libro;
         }
 
-        private Nodo BuscarRecursivo(Nodo actual, int isbn)
+        private Nodo? BuscarRecursivo(Nodo? actual, int isbn)
         {
             if (actual == null || actual.Libro.ISBN == isbn)
             {
@@ -92,10 +80,8 @@ namespace Backend.TDA.Libros
             return BuscarRecursivo(actual.Derecho, isbn);
         }
 
-        // ---------------------------------------------------------
-        // MÍNIMO Y MÁXIMO
-        // ---------------------------------------------------------
-        public NodoLibro ObtenerMinimo()
+//Minimo y Maximo
+        public NodoLibro? ObtenerMinimo()
         {
             if (raiz == null) return null;
             return ObtenerMinimoRecursivo(raiz).Libro;
@@ -107,7 +93,7 @@ namespace Backend.TDA.Libros
             return ObtenerMinimoRecursivo(actual.Izquierdo);
         }
 
-        public NodoLibro ObtenerMaximo()
+        public NodoLibro? ObtenerMaximo()
         {
             if (raiz == null) return null;
             return ObtenerMaximoRecursivo(raiz).Libro;
@@ -119,15 +105,13 @@ namespace Backend.TDA.Libros
             return ObtenerMaximoRecursivo(actual.Derecho);
         }
 
-        // ---------------------------------------------------------
-        // ELIMINACIÓN (3 casos clásicos de BST)
-        // ---------------------------------------------------------
+// Eliminación de un libro por ISBN
         public void EliminarPorISBN(int isbn)
         {
             raiz = EliminarRecursivo(raiz, isbn);
         }
 
-        private Nodo EliminarRecursivo(Nodo actual, int isbn)
+        private Nodo? EliminarRecursivo(Nodo? actual, int isbn)
         {
             if (actual == null)
             {
@@ -155,15 +139,13 @@ namespace Backend.TDA.Libros
             return actual;
         }
 
-        // ---------------------------------------------------------
-        // RECORRIDO IN-ORDER (orden ascendente por ISBN)
-        // ---------------------------------------------------------
+//Reccorrido in-order para procesar todos los libros en orden de ISBN
         public void RecorridoInOrder(Action<NodoLibro> accionPorLibro)
         {
             RecorridoInOrderRecursivo(raiz, accionPorLibro);
         }
 
-        private void RecorridoInOrderRecursivo(Nodo actual, Action<NodoLibro> accionPorLibro)
+        private void RecorridoInOrderRecursivo(Nodo? actual, Action<NodoLibro> accionPorLibro)
         {
             if (actual == null) return;
 

@@ -7,8 +7,8 @@ namespace Backend.TDA.Categoria
         private class Nodo
         {
             public NodoCategoria Categoria;
-            public Nodo Izquierdo;
-            public Nodo Derecho;
+            public Nodo? Izquierdo;
+            public Nodo? Derecho;
 
             public Nodo(NodoCategoria categoria)
             {
@@ -16,7 +16,7 @@ namespace Backend.TDA.Categoria
             }
         }
 
-        private Nodo raiz;
+        private Nodo? raiz;
 
         public BSTCategorias()
         {
@@ -34,7 +34,7 @@ namespace Backend.TDA.Categoria
             raiz = InsertarRecursivo(raiz, nuevaCategoria);
         }
 
-        private Nodo InsertarRecursivo(Nodo actual, NodoCategoria nuevaCategoria)
+        private Nodo InsertarRecursivo(Nodo? actual, NodoCategoria nuevaCategoria)
         {
             if (actual == null)
             {
@@ -61,13 +61,13 @@ namespace Backend.TDA.Categoria
             return actual;
         }
         // Busqueda
-        public NodoCategoria BuscarPorNombre(string nombre)
+        public NodoCategoria? BuscarPorNombre(string nombre)
         {
-            Nodo encontrado = BuscarRecursivo(raiz, nombre);
+            Nodo? encontrado = BuscarRecursivo(raiz, nombre);
             return encontrado?.Categoria;
         }
 
-        private Nodo BuscarRecursivo(Nodo actual, string nombre)
+        private Nodo? BuscarRecursivo(Nodo? actual, string nombre)
         {
             if (actual == null) return null;
 
@@ -86,7 +86,7 @@ namespace Backend.TDA.Categoria
             RecorridoInOrderRecursivo(raiz, accionPorCategoria);
         }
 
-        private void RecorridoInOrderRecursivo(Nodo actual, Action<NodoCategoria> accionPorCategoria)
+        private void RecorridoInOrderRecursivo(Nodo? actual, Action<NodoCategoria> accionPorCategoria)
         {
             if (actual == null) return;
 

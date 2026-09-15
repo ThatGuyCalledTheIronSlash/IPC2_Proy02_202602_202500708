@@ -4,19 +4,8 @@ using System.Xml;
 
 namespace Backend.Servicios
 {
-    /// <summary>
-    /// Clase para cargar datos desde un archivo XML al catálogo de categorías y libros.
-    /// Devuelve un string con los avisos acumulados durante la carga para que el
-    /// endpoint pueda informarlos al usuario web.
-    /// </summary>
     public class CargarXML
     {
-        /// <summary>
-        /// Lee un archivo XML y carga las categorías y libros al catálogo.
-        /// Retorna un string con los avisos/errores individuales que ocurrieron
-        /// durante la carga (categorías o libros que no se pudieron procesar).
-        /// Un string vacío indica que todo se procesó sin problemas.
-        /// </summary>
         public static string LeerArchivo(string rutaArchivo, Catalogo catalogo)
         {
             XmlDocument doc = new XmlDocument();
@@ -30,26 +19,22 @@ namespace Backend.Servicios
             {
                 throw new Exception($"No se pudo cargar el archivo XML: {ex.Message}");
             }
-
-            // ---------------------------------------------------------
             // Leer las categorías
-            // ---------------------------------------------------------
-            XmlNodeList nodosCategoria = doc.SelectNodes("/config/listaCategorias/categoria");
+            XmlNodeList? nodosCategoria = doc.SelectNodes("/config/listaCategorias/categoria");
             if (nodosCategoria != null)
             {
                 for (int i = 0; i < nodosCategoria.Count; i++)
                 {
-                    XmlNode nodoCat = nodosCategoria[i];
+                    XmlNode? nodoCat = nodosCategoria[i];
+                    if (nodoCat == null) continue;
 
                     string nombreCategoria = nodoCat.InnerText.Trim();
-                    string padre = null;
+                    string? padre = null;
 
-                    // Extraer el atributo 'padre' si existe
                     if (nodoCat.Attributes != null && nodoCat.Attributes["padre"] != null)
                     {
-                        padre = nodoCat.Attributes["padre"].Value.Trim();
+                        padre = nodoCat.Attributes["padre"]?.Value.Trim();
 
-                        // Si el atributo viene vacío (""), se toma como nulo
                         if (string.IsNullOrWhiteSpace(padre))
                         {
                             padre = null;
@@ -62,28 +47,32 @@ namespace Backend.Servicios
                     }
                     catch (Exception ex)
                     {
-                        // Acumulamos el aviso para devolverlo al usuario
                         avisos.AppendLine($"Aviso (Categoría): {ex.Message}");
                     }
                 }
             }
-
-            // ---------------------------------------------------------
-            // Leer los libros
-            // ---------------------------------------------------------
-            XmlNodeList nodosLibros = doc.SelectNodes("/config/listaLibros/libro");
+          // Leer los libros
+            XmlNodeList? nodosLibros = doc.SelectNodes("/config/listaLibros/libro");
             if (nodosLibros != null)
             {
                 for (int i = 0; i < nodosLibros.Count; i++)
                 {
-                    XmlNode nodoLibro = nodosLibros[i];
+                    XmlNode? nodoLibro = nodosLibros[i];
+                    if (nodoLibro == null) continue;
                     try
                     {
-                        int isbn = int.Parse(nodoLibro["ISBN"].InnerText.Trim());
-                        string titulo = nodoLibro["titulo"].InnerText.Trim();
-                        string autor = nodoLibro["autor"].InnerText.Trim();
-                        string categoria = nodoLibro["categoria"].InnerText.Trim();
+                        string? isbnText  = nodoLibro["ISBN"]?.InnerText.Trim();
+                        string? titulo    = nodoLibro["titulo"]?.InnerText.Trim();
+                        string? autor     = nodoLibro["autor"]?.InnerText.Trim();
+                        string? categoria = nodoLibro["categoria"]?.InnerText.Trim();
 
+                        if (isbnText == null || titulo == null || autor == null || categoria == null)
+                        {
+                            avisos.AppendLine("Aviso (Libro): Elemento XML incompleto, se omite.");
+                            continue;
+                        }
+
+                        int isbn = int.Parse(isbnText);
                         catalogo.RegistrarLibro(isbn, titulo, autor, categoria);
                     }
                     catch (Exception ex)
