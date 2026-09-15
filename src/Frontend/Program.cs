@@ -183,36 +183,30 @@ app.MapDelete("/api/libro/{isbn:int}", (int isbn) =>
 //11. Endpoint para obtener todos los libros de todas las categorías
 app.MapGet("/api/arbol-categorias", () =>
 {
-    // Si no hay categorías principales, está vacío
     if (catalogoGlobal.Categorias.CategoriasPrincipales.EstaVacio())
     {
         return Results.Ok(new { html = "<p style='color:#7f8c8d;'>No hay categorías registradas en el catálogo.</p>" });
     }
-    // Usaremos un string simple para ir construyendo el HTML de las viñetas (<ul> y <li>)
-    string htmlEstructura = "<ul style='list-style-type: square; margin-left: 20px;'>";
-    
-    // Función recursiva local: recorre el BST e imprime hijos adentro de hijos
+    var sb = new System.Text.StringBuilder();
+    sb.Append("<ul style='list-style-type: square; margin-left: 20px;'>");
     void ConstruirArbolHtml(BSTCategorias bst)
     {
-        bst.RecorridoInOrder(cat => 
+        bst.RecorridoInOrder(cat =>
         {
-            htmlEstructura += $"<li style='margin-bottom: 5px; font-size: 16px;'><strong>{cat.Nombre}</strong>";
-            
-            // Si esta categoría tiene subcategorías, abramos otra lista dentro de este punto
+            string nombreSeguro = System.Net.WebUtility.HtmlEncode(cat.Nombre);
+            sb.Append($"<li style='margin-bottom: 5px; font-size: 16px;'><strong>{nombreSeguro}</strong>");
             if (!cat.Hijos.EstaVacio())
             {
-                htmlEstructura += "<ul style='list-style-type: circle; margin-left: 20px; color: #2980b9;'>";
+                sb.Append("<ul style='list-style-type: circle; margin-left: 20px; color: #2980b9;'>");
                 ConstruirArbolHtml(cat.Hijos);
-                htmlEstructura += "</ul>";
+                sb.Append("</ul>");
             }
-            htmlEstructura += "</li>";
+            sb.Append("</li>");
         });
     }
-    // Arrancamos el proceso desde la raíz (las categorías sin padre)
-   ConstruirArbolHtml(catalogoGlobal.Categorias.CategoriasPrincipales);
-    
-    htmlEstructura += "</ul>";
-    return Results.Ok(new { html = htmlEstructura });
+    ConstruirArbolHtml(catalogoGlobal.Categorias.CategoriasPrincipales);
+    sb.Append("</ul>");
+    return Results.Ok(new { html = sb.ToString() });
 });
 
 //12. Registrar nueva Categoria
@@ -262,12 +256,45 @@ app.MapGet("/api/dashboard", () =>
 app.MapGet("/api/grafica-arbol", () =>
 {
     var carpetaImg = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "img");
+    if (!Directory.Exists(carpetaImg))
+    {
+        Directory.CreateDirectory(carpetaImg);
+    }
     var rutaSalida = Path.Combine(carpetaImg, "grafica_arbol.png");
-    
-    ReporteGraphviz.GenerarGraficaCategorias(catalogoGlobal.Categorias.CategoriasPrincipales, rutaSalida);
-    
-    return Results.Ok(new { url = $"/img/grafica_arbol.png?t={DateTime.Now.Ticks}" });
+    try
+    {
+        ReporteGraphviz.GenerarGraficaCategorias(
+            catalogoGlobal.Categorias.CategoriasPrincipales, rutaSalida);
+        return Results.Ok(new { url = $"/img/grafica_arbol.png?t={DateTime.Now.Ticks}" });
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new { mensaje = ex.Message });
+    }
 });
+//15. Endpoint para listar TODOS los libros en orden ascendente por ISBN
+app.MapGet("/api/todos-libros", () =>
+{
+    if (catalogoGlobal.IndiceGlobalLibros.EstaVacio())
+    {
+        return Results.Content("[]", "application/json");
+    }
+    var sb = new System.Text.StringBuilder();
+    sb.Append("[");
+    bool primero = true;
+    catalogoGlobal.IndiceGlobalLibros.RecorridoInOrder(libro =>
+    {
+        if (!primero) sb.Append(",");
+        primero = false;
+        string titulo = libro.Titulo.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        string autor = libro.Autor.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        string cat = libro.Categoria.Nombre.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        sb.Append($"{{\"isbn\":{libro.ISBN},\"titulo\":\"{titulo}\",\"autor\":\"{autor}\",\"categoria\":\"{cat}\"}}");
+    });
+    sb.Append("]");
+    return Results.Content(sb.ToString(), "application/json");
+});
+
 
 
 app.Run();

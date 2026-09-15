@@ -97,28 +97,29 @@ namespace Backend.Servicios
 //Genera un Arbol de todas las categorias
         public static void GenerarGraficaCategorias(BSTCategorias categoriasPrincipales, string rutaSalida)
         {
-            if (categoriasPrincipales.EstaVacio()) return;
-            string dotContent = "digraph G {\n";
-            dotContent += "  node [shape=folder, style=filled, fillcolor=\"#a2d9ce\", fontname=\"Arial\"];\n";
-            dotContent += "  rankdir=TB;\n"; // TB = De arriba hacia abajo
-            // Función local recursiva para dibujar las conexiones Padre -> Hijo
+            if (categoriasPrincipales.EstaVacio())
+            {
+                throw new Exception("No hay categorías registradas para graficar.");
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("digraph G {");
+            sb.AppendLine("  node [shape=folder, style=filled, fillcolor=\"#a2d9ce\", fontname=\"Arial\"];");
+            sb.AppendLine("  rankdir=TB;");
             void DibujarJerarquia(NodoCategoria cat)
             {
-                dotContent += $"  \"{cat.Nombre}\";\n"; // Asegurar que el nodo se dibuje
-                
-                cat.Hijos.RecorridoInOrder(hijo => 
+                string nombreEscapado = EscaparDOT(cat.Nombre);
+                sb.AppendLine($"  \"{nombreEscapado}\";");
+                cat.Hijos.RecorridoInOrder(hijo =>
                 {
-                    dotContent += $"  \"{cat.Nombre}\" -> \"{hijo.Nombre}\";\n";
+                    string hijoEscapado = EscaparDOT(hijo.Nombre);
+                    sb.AppendLine($"  \"{nombreEscapado}\" -> \"{hijoEscapado}\";");
                     DibujarJerarquia(hijo);
                 });
             }
-            // Iniciamos el dibujo desde cada categoría raíz
-            categoriasPrincipales.RecorridoInOrder(raiz => {
-                DibujarJerarquia(raiz);
-            });
-            dotContent += "}\n";
+            categoriasPrincipales.RecorridoInOrder(raiz => DibujarJerarquia(raiz));
+            sb.AppendLine("}");
             string dotPath = rutaSalida.Replace(".png", ".dot");
-            File.WriteAllText(dotPath, dotContent);
+            File.WriteAllText(dotPath, sb.ToString());
             try
             {
                 ProcessStartInfo info = new ProcessStartInfo("dot")
@@ -129,11 +130,14 @@ namespace Backend.Servicios
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
-                using (Process proc = Process.Start(info)) { proc.WaitForExit(); }
+                using (Process proc = Process.Start(info))
+                {
+                    proc.WaitForExit();
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error al ejecutar Graphviz: " + ex.Message);
+                throw new Exception("Error al ejecutar Graphviz (¿está instalado y en el PATH?): " + ex.Message);
             }
         }
     }

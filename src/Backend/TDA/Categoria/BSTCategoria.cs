@@ -1,21 +1,7 @@
 using System;
-
+using System.Globalization;
 namespace Backend.TDA.Categoria
 {
-    /// <summary>
-    /// Árbol binario de búsqueda (TDA propio) que organiza
-    /// categorías por nombre. Igual que BSTLibros, la estructura
-    /// del árbol vive en una clase interna privada (Nodo), separada
-    /// de NodoCategoria, para que una misma categoría pueda
-    /// insertarse tanto en el BST de "hijos" de su padre como en
-    /// un eventual índice global por nombre, sin conflictos.
-    ///
-    /// Se usa en dos contextos distintos dentro del proyecto:
-    ///  1) Como los "hijos" de un NodoCategoria (orden alfabético
-    ///     entre subcategorías del mismo nivel).
-    ///  2) Como índice global de todas las categorías por nombre,
-    ///     para ubicar rápido a un padre al leer el XML.
-    /// </summary>
     public class BSTCategorias
     {
         private class Nodo
@@ -42,9 +28,7 @@ namespace Backend.TDA.Categoria
             return raiz == null;
         }
 
-        // ---------------------------------------------------------
-        // INSERCIÓN
-        // ---------------------------------------------------------
+        // Insercion
         public void Insertar(NodoCategoria nuevaCategoria)
         {
             raiz = InsertarRecursivo(raiz, nuevaCategoria);
@@ -57,7 +41,8 @@ namespace Backend.TDA.Categoria
                 return new Nodo(nuevaCategoria);
             }
 
-            int comparacion = string.Compare(nuevaCategoria.Nombre, actual.Categoria.Nombre, StringComparison.Ordinal);
+            int comparacion = string.Compare(nuevaCategoria.Nombre, actual.Categoria.Nombre,
+                CultureInfo.InvariantCulture, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace);
 
             if (comparacion < 0)
             {
@@ -75,10 +60,7 @@ namespace Backend.TDA.Categoria
 
             return actual;
         }
-
-        // ---------------------------------------------------------
-        // BÚSQUEDA
-        // ---------------------------------------------------------
+        // Busqueda
         public NodoCategoria BuscarPorNombre(string nombre)
         {
             Nodo encontrado = BuscarRecursivo(raiz, nombre);
@@ -89,16 +71,16 @@ namespace Backend.TDA.Categoria
         {
             if (actual == null) return null;
 
-            int comparacion = string.Compare(nombre, actual.Categoria.Nombre, StringComparison.Ordinal);
+            int comparacion = string.Compare(nombre, actual.Categoria.Nombre,
+                CultureInfo.InvariantCulture, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace);
 
             if (comparacion == 0) return actual;
             if (comparacion < 0) return BuscarRecursivo(actual.Izquierdo, nombre);
             return BuscarRecursivo(actual.Derecho, nombre);
         }
 
-        // ---------------------------------------------------------
-        // RECORRIDO IN-ORDER (orden alfabético)
-        // ---------------------------------------------------------
+
+        // Recorrido In-Order (orden alfabético)
         public void RecorridoInOrder(Action<NodoCategoria> accionPorCategoria)
         {
             RecorridoInOrderRecursivo(raiz, accionPorCategoria);
