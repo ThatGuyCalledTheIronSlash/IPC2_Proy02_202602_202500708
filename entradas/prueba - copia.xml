@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+<config>
+  <listaCategorias>
+    <categoria>Librería Central</categoria>
+    <categoria padre="Librería Central">Arte</categoria>
+    <categoria padre="Arte">Diseño</categoria>
+    <categoria padre="Arte">Fotografía</categoria>
+    <categoria padre="Librería Central">Ciencia</categoria>
+    <categoria padre="Ciencia">Biología</categoria>
+    <categoria padre="Ciencia">Física</categoria>
+    <categoria padre="Física">Astronomía</categoria>
+    <categoria padre="Librería Central">Literatura</categoria>
+    <categoria padre="Literatura">Ficción</categoria>
+    <categoria padre="Ficción">Ciencia Ficción</categoria>
+    <categoria padre="Ficción">Fantasía</categoria>
+    <categoria padre="Literatura">Poesía</categoria>
+    <categoria padre="Librería Central">Tecnología</categoria>
+    <categoria padre="Tecnología">Programación</categoria>
+    <categoria padre="Programación">Estructuras de Datos</categoria>
+    <categoria padre="Tecnología">Redes</categoria>
+  </listaCategorias>
+  <listaLibros>
+    <libro>
+      <ISBN>50231</ISBN>
+      <titulo>El nombre del viento</titulo>
+      <autor>Patrick Rothfuss</autor>
+      <categoria>Fantasía</categoria>
+    </libro>
+    <libro>
+      <ISBN>33412</ISBN>
+      <titulo>Dune</titulo>
+      <autor>Frank Herbert</autor>
+      <categoria>Ciencia Ficción</categoria>
+    </libro>
+    <libro>
+      <ISBN>71880</ISBN>
+      <titulo>Estructuras de datos y algoritmos</titulo>
+      <autor>Mark A. Weiss</autor>
+      <categoria>Estructuras de Datos</categoria>
+    </libro>
+    <libro>
+      <ISBN>20145</ISBN>
+      <titulo>Breves respuestas a las grandes preguntas</titulo>
+      <autor>Stephen Hawking</autor>
+      <categoria>Astronomía</categoria>
+    </libro>
+    <libro>
+      <ISBN>64703</ISBN>
+      <titulo>Redes de computadoras</titulo>
+      <autor>Andrew Tanenbaum</autor>
+      <categoria>Redes</categoria>
+    </libro>
+    <libro>
+      <ISBN>12098</ISBN>
+      <titulo>El origen de las especies</titulo>
+      <autor>Charles Darwin</autor>
+      <categoria>Biología</categoria>
+    </libro>
+    <libro>
+      <ISBN>45677</ISBN>
+      <titulo>Código limpio</titulo>
+      <autor>Robert C. Martin</autor>
+      <categoria>Programación</categoria>
+    </libro>
+    <libro>
+      <ISBN>58320</ISBN>
+      <titulo>Antología poética</titulo>
+      <autor>Pablo Neruda</autor>
+      <categoria>Poesía</categoria>
+    </libro>
+    <libro>
+      <ISBN>29764</ISBN>
+      <titulo>Sobre la fotografía</titulo>
+      <autor>Susan Sontag</autor>
+      <categoria>Fotografía</categoria>
+    </libro>
+    <libro>
+      <ISBN>81455</ISBN>
+      <titulo>Sistemas de retículas</titulo>
+      <autor>J. Müller-Brockmann</autor>
+      <categoria>Diseño</categoria>
+    </libro>
+    <libro>
+      <ISBN>37109</ISBN>
+      <titulo>Física conceptual</titulo>
+      <autor>Paul Hewitt</autor>
+      <categoria>Física</categoria>
+    </libro>
+    <libro>
+      <ISBN>68932</ISBN>
+      <titulo>Neuromante</titulo>
+      <autor>William Gibson</autor>
+      <categoria>Ciencia Ficción</categoria>
+    </libro>
+    <libro>
+      <ISBN>92014</ISBN>
+      <titulo>Refactorización</titulo>
+      <autor>Martin Fowler</autor>
+      <categoria>Programación</categoria>
+    </libro>
+    <libro>
+      <ISBN>41236</ISBN>
+      <titulo>El mundo y sus demonios</titulo>
+      <autor>Carl Sagan</autor>
+      <categoria>Ciencia</categoria>
+    </libro>
+  </listaLibros>
+</config>
