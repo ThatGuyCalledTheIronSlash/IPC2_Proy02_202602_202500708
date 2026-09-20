@@ -1,0 +1,5 @@
+digraph G {
+  node [shape=record, style=filled, fillcolor=lightblue, fontname="Arial"];
+  rankdir=TB;
+  node37109 [label="{ ISBN: 37109 | Física conceptual | Paul Hewitt }"];
+}

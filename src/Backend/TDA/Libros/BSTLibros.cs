@@ -2,156 +2,245 @@ using System;
 
 namespace Backend.TDA.Libros
 {
-    public class BSTLibros
-    {
-        private class Nodo
-        {
-            public NodoLibro Libro;
-            public Nodo? Izquierdo;
-            public Nodo? Derecho;
+	public delegate void AccionLibro(NodoLibro libro);
 
-            public Nodo(NodoLibro libro)
-            {
-                Libro = libro;
-            }
-        }
+	public class BSTLibros
+	{
+		private class Nodo
+		{
+			public NodoLibro Libro;
+			public Nodo? Izquierdo;
+			public Nodo? Derecho;
+			public int Altura;
 
-        private Nodo? raiz;
+			public Nodo(NodoLibro libro)
+			{
+				Libro = libro;
+				Altura = 1;
+			}
+		}
 
-        public BSTLibros()
-        {
-            raiz = null;
-        }
+		private Nodo? raiz;
 
-        public bool EstaVacio()
-        {
-            return raiz == null;
-        }
+		public BSTLibros()
+		{
+			raiz = null;
+		}
 
-//Insercion
-        public void Insertar(NodoLibro nuevoLibro)
-        {
-            raiz = InsertarRecursivo(raiz, nuevoLibro);
-        }
+		public bool EstaVacio()
+		{
+			return raiz == null;
+		}
 
-        private Nodo InsertarRecursivo(Nodo? actual, NodoLibro nuevoLibro)
-        {
-            if (actual == null)
-            {
-                return new Nodo(nuevoLibro);
-            }
+		private int ObtenerAltura(Nodo? n) => n?.Altura ?? 0;
 
-            if (nuevoLibro.ISBN < actual.Libro.ISBN)
-            {
-                actual.Izquierdo = InsertarRecursivo(actual.Izquierdo, nuevoLibro);
-            }
-            else if (nuevoLibro.ISBN > actual.Libro.ISBN)
-            {
-                actual.Derecho = InsertarRecursivo(actual.Derecho, nuevoLibro);
-            }
-            else
-            {
-                throw new InvalidOperationException(
-                    $"Ya existe un libro registrado con el ISBN {nuevoLibro.ISBN}.");
-            }
+		private int ObtenerFactorBalance(Nodo? n)
+		{
+			if (n == null) return 0;
+			return ObtenerAltura(n.Izquierdo) - ObtenerAltura(n.Derecho);
+		}
 
-            return actual;
-        }
+		private void ActualizarAltura(Nodo n)
+		{
+			int altIzq = ObtenerAltura(n.Izquierdo);
+			int altDer = ObtenerAltura(n.Derecho);
+			n.Altura = 1 + (altIzq > altDer ? altIzq : altDer);
+		}
 
-//Busqueda
-        public NodoLibro? BuscarPorISBN(int isbn)
-        {
-            Nodo? encontrado = BuscarRecursivo(raiz, isbn);
-            return encontrado?.Libro;
-        }
+		private Nodo RotacionDerecha(Nodo y)
+		{
+			Nodo x = y.Izquierdo!;
+			Nodo? t2 = x.Derecho;
 
-        private Nodo? BuscarRecursivo(Nodo? actual, int isbn)
-        {
-            if (actual == null || actual.Libro.ISBN == isbn)
-            {
-                return actual;
-            }
+			x.Derecho = y;
+			y.Izquierdo = t2;
 
-            if (isbn < actual.Libro.ISBN)
-            {
-                return BuscarRecursivo(actual.Izquierdo, isbn);
-            }
+			ActualizarAltura(y);
+			ActualizarAltura(x);
 
-            return BuscarRecursivo(actual.Derecho, isbn);
-        }
+			return x;
+		}
 
-//Minimo y Maximo
-        public NodoLibro? ObtenerMinimo()
-        {
-            if (raiz == null) return null;
-            return ObtenerMinimoRecursivo(raiz).Libro;
-        }
+		private Nodo RotacionIzquierda(Nodo x)
+		{
+			Nodo y = x.Derecho!;
+			Nodo? t2 = y.Izquierdo;
 
-        private Nodo ObtenerMinimoRecursivo(Nodo actual)
-        {
-            if (actual.Izquierdo == null) return actual;
-            return ObtenerMinimoRecursivo(actual.Izquierdo);
-        }
+			y.Izquierdo = x;
+			x.Derecho = t2;
 
-        public NodoLibro? ObtenerMaximo()
-        {
-            if (raiz == null) return null;
-            return ObtenerMaximoRecursivo(raiz).Libro;
-        }
+			ActualizarAltura(x);
+			ActualizarAltura(y);
 
-        private Nodo ObtenerMaximoRecursivo(Nodo actual)
-        {
-            if (actual.Derecho == null) return actual;
-            return ObtenerMaximoRecursivo(actual.Derecho);
-        }
+			return y;
+		}
 
-// Eliminación de un libro por ISBN
-        public void EliminarPorISBN(int isbn)
-        {
-            raiz = EliminarRecursivo(raiz, isbn);
-        }
+		public void Insertar(NodoLibro nuevoLibro)
+		{
+			raiz = InsertarRecursivo(raiz, nuevoLibro);
+		}
 
-        private Nodo? EliminarRecursivo(Nodo? actual, int isbn)
-        {
-            if (actual == null)
-            {
-                return null;
-            }
+		private Nodo InsertarRecursivo(Nodo? actual, NodoLibro nuevoLibro)
+		{
+			if (actual == null)
+			{
+				return new Nodo(nuevoLibro);
+			}
 
-            if (isbn < actual.Libro.ISBN)
-            {
-                actual.Izquierdo = EliminarRecursivo(actual.Izquierdo, isbn);
-            }
-            else if (isbn > actual.Libro.ISBN)
-            {
-                actual.Derecho = EliminarRecursivo(actual.Derecho, isbn);
-            }
-            else
-            {
-                if (actual.Izquierdo == null) return actual.Derecho;
-                if (actual.Derecho == null) return actual.Izquierdo;
+			if (nuevoLibro.ISBN < actual.Libro.ISBN)
+			{
+				actual.Izquierdo = InsertarRecursivo(actual.Izquierdo, nuevoLibro);
+			}
+			else if (nuevoLibro.ISBN > actual.Libro.ISBN)
+			{
+				actual.Derecho = InsertarRecursivo(actual.Derecho, nuevoLibro);
+			}
+			else
+			{
+				throw new InvalidOperationException($"Ya existe un libro registrado con el ISBN {nuevoLibro.ISBN}.");
+			}
 
-                Nodo sucesor = ObtenerMinimoRecursivo(actual.Derecho);
-                actual.Libro = sucesor.Libro;
-                actual.Derecho = EliminarRecursivo(actual.Derecho, sucesor.Libro.ISBN);
-            }
+			ActualizarAltura(actual);
 
-            return actual;
-        }
+			int balance = ObtenerFactorBalance(actual);
 
-//Reccorrido in-order para procesar todos los libros en orden de ISBN
-        public void RecorridoInOrder(Action<NodoLibro> accionPorLibro)
-        {
-            RecorridoInOrderRecursivo(raiz, accionPorLibro);
-        }
+			if (balance > 1 && nuevoLibro.ISBN < actual.Izquierdo!.Libro.ISBN)
+			{
+				return RotacionDerecha(actual);
+			}
 
-        private void RecorridoInOrderRecursivo(Nodo? actual, Action<NodoLibro> accionPorLibro)
-        {
-            if (actual == null) return;
+			if (balance < -1 && nuevoLibro.ISBN > actual.Derecho!.Libro.ISBN)
+			{
+				return RotacionIzquierda(actual);
+			}
 
-            RecorridoInOrderRecursivo(actual.Izquierdo, accionPorLibro);
-            accionPorLibro(actual.Libro);
-            RecorridoInOrderRecursivo(actual.Derecho, accionPorLibro);
-        }
-    }
+			if (balance > 1 && nuevoLibro.ISBN > actual.Izquierdo!.Libro.ISBN)
+			{
+				actual.Izquierdo = RotacionIzquierda(actual.Izquierdo!);
+				return RotacionDerecha(actual);
+			}
+
+			if (balance < -1 && nuevoLibro.ISBN < actual.Derecho!.Libro.ISBN)
+			{
+				actual.Derecho = RotacionDerecha(actual.Derecho!);
+				return RotacionIzquierda(actual);
+			}
+
+			return actual;
+		}
+
+		public NodoLibro? BuscarPorISBN(long isbn)
+		{
+			Nodo? encontrado = BuscarRecursivo(raiz, isbn);
+			return encontrado?.Libro;
+		}
+
+		private Nodo? BuscarRecursivo(Nodo? actual, long isbn)
+		{
+			if (actual == null || actual.Libro.ISBN == isbn)
+			{
+				return actual;
+			}
+
+			if (isbn < actual.Libro.ISBN)
+			{
+				return BuscarRecursivo(actual.Izquierdo, isbn);
+			}
+
+			return BuscarRecursivo(actual.Derecho, isbn);
+		}
+
+		public NodoLibro? ObtenerMinimo()
+		{
+			if (raiz == null) return null;
+			return ObtenerMinimoRecursivo(raiz).Libro;
+		}
+
+		private Nodo ObtenerMinimoRecursivo(Nodo actual)
+		{
+			if (actual.Izquierdo == null) return actual;
+			return ObtenerMinimoRecursivo(actual.Izquierdo);
+		}
+
+		public NodoLibro? ObtenerMaximo()
+		{
+			if (raiz == null) return null;
+			return ObtenerMaximoRecursivo(raiz).Libro;
+		}
+
+		private Nodo ObtenerMaximoRecursivo(Nodo actual)
+		{
+			if (actual.Derecho == null) return actual;
+			return ObtenerMaximoRecursivo(actual.Derecho);
+		}
+
+		public void EliminarPorISBN(long isbn)
+		{
+			raiz = EliminarRecursivo(raiz, isbn);
+		}
+
+		private Nodo? EliminarRecursivo(Nodo? actual, long isbn)
+		{
+			if (actual == null)
+			{
+				return null;
+			}
+
+			if (isbn < actual.Libro.ISBN)
+			{
+				actual.Izquierdo = EliminarRecursivo(actual.Izquierdo, isbn);
+			}
+			else if (isbn > actual.Libro.ISBN)
+			{
+				actual.Derecho = EliminarRecursivo(actual.Derecho, isbn);
+			}
+			else
+			{
+				if (actual.Izquierdo == null) return actual.Derecho;
+				if (actual.Derecho == null) return actual.Izquierdo;
+
+				Nodo sucesor = ObtenerMinimoRecursivo(actual.Derecho);
+				actual.Libro = sucesor.Libro;
+				actual.Derecho = EliminarRecursivo(actual.Derecho, sucesor.Libro.ISBN);
+			}
+
+			ActualizarAltura(actual);
+
+			int balance = ObtenerFactorBalance(actual);
+
+			if (balance > 1 && ObtenerFactorBalance(actual.Izquierdo) >= 0)
+				return RotacionDerecha(actual);
+
+			if (balance > 1 && ObtenerFactorBalance(actual.Izquierdo) < 0)
+			{
+				actual.Izquierdo = RotacionIzquierda(actual.Izquierdo!);
+				return RotacionDerecha(actual);
+			}
+
+			if (balance < -1 && ObtenerFactorBalance(actual.Derecho) <= 0)
+				return RotacionIzquierda(actual);
+
+			if (balance < -1 && ObtenerFactorBalance(actual.Derecho) > 0)
+			{
+				actual.Derecho = RotacionDerecha(actual.Derecho!);
+				return RotacionIzquierda(actual);
+			}
+
+			return actual;
+		}
+
+		public void RecorridoInOrder(AccionLibro accionPorLibro)
+		{
+			RecorridoInOrderRecursivo(raiz, accionPorLibro);
+		}
+
+		private void RecorridoInOrderRecursivo(Nodo? actual, AccionLibro accionPorLibro)
+		{
+			if (actual == null) return;
+
+			RecorridoInOrderRecursivo(actual.Izquierdo, accionPorLibro);
+			accionPorLibro(actual.Libro);
+			RecorridoInOrderRecursivo(actual.Derecho, accionPorLibro);
+		}
+	}
 }

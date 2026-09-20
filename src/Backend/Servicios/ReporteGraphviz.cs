@@ -1,144 +1,194 @@
 using System;
 using System.IO;
 using System.Text;
-using Backend.TDA.Categoria;
 using System.Diagnostics;
+using Backend.TDA.Categoria;
 using Backend.TDA.Libros;
 
 namespace Backend.Servicios
 {
-    public class ReporteGraphviz
-    {
+	public class ReporteGraphviz
+	{
+		public static void GenerarGraficaLibros(BSTLibros libros, string rutaSalida)
+		{
+			if (libros.EstaVacio())
+			{
+				throw new Exception("No hay libros para graficar.");
+			}
 
-        /// Genera una imagen PNG usando Graphviz que muestra los librosen estricto orden ascendente por ISBN.
-        public static void GenerarGraficaLibros(BSTLibros libros, string rutaSalida)
-        {
-            if (libros.EstaVacio())
-            {
-                throw new Exception("La categoría no tiene libros para graficar.");
-            }
+			StringBuilder sb = new StringBuilder();
+			sb.AppendLine("digraph G {");
+			sb.AppendLine("  node [shape=record, style=filled, fillcolor=lightblue, fontname=\"Arial\"];");
+			sb.AppendLine("  rankdir=TB;");
 
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("digraph G {");
-            sb.AppendLine("  node [shape=record, style=filled, fillcolor=lightblue, fontname=\"Arial\"];");
-            sb.AppendLine("  rankdir=TB;"); // TB = Top to Bottom
+			NodoLibro? libroAnterior = null;
 
-            NodoLibro? libroAnterior = null;
+			libros.RecorridoInOrder(libroActual =>
+			{
+				string tituloEscapado = EscaparDOT(libroActual.Titulo);
+				string autorEscapado = EscaparDOT(libroActual.Autor);
 
-            // Recorrido In-Order garantiza orden ascendente por ISBN
-            libros.RecorridoInOrder(libroActual =>
-            {
-                string tituloEscapado = EscaparDOT(libroActual.Titulo);
-                string autorEscapado = EscaparDOT(libroActual.Autor);
+				string label = $"{{ ISBN: {libroActual.ISBN} | {tituloEscapado} | {autorEscapado} }}";
+				sb.AppendLine($"  node{libroActual.ISBN} [label=\"{label}\"];");
 
-                string label = $"{{ ISBN: {libroActual.ISBN} | {tituloEscapado} | {autorEscapado} }}";
-                sb.AppendLine($"  node{libroActual.ISBN} [label=\"{label}\"];");
+				if (libroAnterior != null)
+				{
+					sb.AppendLine($"  node{libroAnterior.ISBN} -> node{libroActual.ISBN};");
+				}
 
-                if (libroAnterior != null)
-                {
-                    sb.AppendLine($"  node{libroAnterior.ISBN} -> node{libroActual.ISBN};");
-                }
+				libroAnterior = libroActual;
+			});
 
-                libroAnterior = libroActual;
-            });
+			sb.AppendLine("}");
 
-            sb.AppendLine("}");
+			EjecutarDot(sb.ToString(), rutaSalida);
+		}
 
-            string dotPath = rutaSalida.Replace(".png", ".dot");
-            File.WriteAllText(dotPath, sb.ToString());
+		public static void GenerarGraficaJerarquia(NodoCategoria? raizEspecifica, BSTCategorias raicesPrincipales, string rutaSalida)
+		{
+			if (raizEspecifica == null && raicesPrincipales.EstaVacio())
+			{
+				throw new Exception("No hay categorías registradas para graficar.");
+			}
 
-            try
-            {
-                ProcessStartInfo info = new ProcessStartInfo("dot")
-                {
-                    Arguments = $"-Tpng \"{dotPath}\" -o \"{rutaSalida}\"",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
+			StringBuilder sb = new StringBuilder();
+			sb.AppendLine("digraph G {");
+			sb.AppendLine("  rankdir=TB;");
 
-                using (Process? proc = Process.Start(info))
-                {
-                    proc?.WaitForExit();
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error al ejecutar Graphviz (¿está instalado y en el PATH?): " + ex.Message);
-            }
-        }
+			void DibujarNodo(NodoCategoria cat)
+			{
+				string idCat = $"cat_{SanitizarId(cat.Nombre)}";
+				string catLabel = EscaparDOT(cat.Nombre);
+				sb.AppendLine($"  {idCat} [shape=folder, style=filled, fillcolor=\"#a2d9ce\", fontname=\"Arial\", label=\"{catLabel}\"];");
 
+				cat.Hijos.RecorridoInOrder(hijo =>
+				{
+					string idHijo = $"cat_{SanitizarId(hijo.Nombre)}";
+					sb.AppendLine($"  {idCat} -> {idHijo};");
+					DibujarNodo(hijo);
+				});
 
-        /// Escapa caracteres especiales que romperían la sintaxis DOT
-        private static string EscaparDOT(string texto)
-        {
-            if (string.IsNullOrEmpty(texto)) return texto;
+				cat.LibrosDirectos.RecorridoInOrder(libro =>
+				{
+					string idLibro = $"libro_{libro.ISBN}";
+					string tit = EscaparDOT(libro.Titulo);
+					string aut = EscaparDOT(libro.Autor);
+					string labelLibro = $"{{ ISBN: {libro.ISBN} | {tit} | {aut} }}";
+					sb.AppendLine($"  {idLibro} [shape=record, style=filled, fillcolor=\"#fff2cc\", fontname=\"Arial\", label=\"{labelLibro}\"];");
+					sb.AppendLine($"  {idCat} -> {idLibro};");
+				});
+			}
 
-            StringBuilder resultado = new StringBuilder();
-            for (int i = 0; i < texto.Length; i++)
-            {
-                char c = texto[i];
-                switch (c)
-                {
-                    case '"':  resultado.Append("\\\""); break;
-                    case '{':  resultado.Append("\\{");  break;
-                    case '}':  resultado.Append("\\}");  break;
-                    case '|':  resultado.Append("\\|");  break;
-                    case '<':  resultado.Append("\\<");  break;
-                    case '>':  resultado.Append("\\>");  break;
-                    case '\\': resultado.Append("\\\\"); break;
-                    default:   resultado.Append(c);      break;
-                }
-            }
-            return resultado.ToString();
-        }
+			if (raizEspecifica != null)
+			{
+				DibujarNodo(raizEspecifica);
+			}
+			else
+			{
+				raicesPrincipales.RecorridoInOrder(cat => DibujarNodo(cat));
+			}
 
-//Genera un Arbol de todas las categorias
-        public static void GenerarGraficaCategorias(BSTCategorias categoriasPrincipales, string rutaSalida)
-        {
-            if (categoriasPrincipales.EstaVacio())
-            {
-                throw new Exception("No hay categorías registradas para graficar.");
-            }
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("digraph G {");
-            sb.AppendLine("  node [shape=folder, style=filled, fillcolor=\"#a2d9ce\", fontname=\"Arial\"];");
-            sb.AppendLine("  rankdir=TB;");
-            void DibujarJerarquia(NodoCategoria cat)
-            {
-                string nombreEscapado = EscaparDOT(cat.Nombre);
-                sb.AppendLine($"  \"{nombreEscapado}\";");
-                cat.Hijos.RecorridoInOrder(hijo =>
-                {
-                    string hijoEscapado = EscaparDOT(hijo.Nombre);
-                    sb.AppendLine($"  \"{nombreEscapado}\" -> \"{hijoEscapado}\";");
-                    DibujarJerarquia(hijo);
-                });
-            }
-            categoriasPrincipales.RecorridoInOrder(raiz => DibujarJerarquia(raiz));
-            sb.AppendLine("}");
-            string dotPath = rutaSalida.Replace(".png", ".dot");
-            File.WriteAllText(dotPath, sb.ToString());
-            try
-            {
-                ProcessStartInfo info = new ProcessStartInfo("dot")
-                {
-                    Arguments = $"-Tpng \"{dotPath}\" -o \"{rutaSalida}\"",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-                using (Process? proc = Process.Start(info))
-                {
-                    proc?.WaitForExit();
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error al ejecutar Graphviz (¿está instalado y en el PATH?): " + ex.Message);
-            }
-        }
-    }
+			sb.AppendLine("}");
+
+			EjecutarDot(sb.ToString(), rutaSalida);
+		}
+
+		private static void EjecutarDot(string contenidoDot, string rutaSalida)
+		{
+			string dotPath = rutaSalida.Replace(".png", ".dot");
+			File.WriteAllText(dotPath, contenidoDot);
+
+			try
+			{
+				ProcessStartInfo info = new ProcessStartInfo("dot")
+				{
+					Arguments = $"-Tpng \"{dotPath}\" -o \"{rutaSalida}\"",
+					RedirectStandardOutput = true,
+					RedirectStandardError = true,
+					UseShellExecute = false,
+					CreateNoWindow = true
+				};
+
+				using (Process? proc = Process.Start(info))
+				{
+					if (proc == null)
+					{
+						throw new Exception("No se pudo iniciar el proceso de Graphviz ('dot').");
+					}
+
+					string stderr = proc.StandardError.ReadToEnd();
+					proc.WaitForExit();
+
+					if (proc.ExitCode != 0)
+					{
+						throw new Exception($"Graphviz terminó con código de error {proc.ExitCode}: {stderr}");
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Error al ejecutar Graphviz (¿está instalado y en el PATH?): " + ex.Message);
+			}
+		}
+
+		public static string SanitizarNombreArchivo(string nombre)
+		{
+			if (string.IsNullOrWhiteSpace(nombre)) return "grafica";
+			char[] invalidos = Path.GetInvalidFileNameChars();
+			char[] chars = nombre.ToCharArray();
+			for (int i = 0; i < chars.Length; i++)
+			{
+				if (chars[i] == ' ') chars[i] = '_';
+				else
+				{
+					for (int j = 0; j < invalidos.Length; j++)
+					{
+						if (chars[i] == invalidos[j])
+						{
+							chars[i] = '_';
+							break;
+						}
+					}
+				}
+			}
+			return new string(chars);
+		}
+
+		private static string SanitizarId(string texto)
+		{
+			if (string.IsNullOrEmpty(texto)) return "nodo";
+			StringBuilder sb = new StringBuilder();
+			foreach (char c in texto)
+			{
+				if (char.IsLetterOrDigit(c) || c == '_')
+					sb.Append(c);
+				else
+					sb.Append('_');
+			}
+			return sb.ToString();
+		}
+
+		private static string EscaparDOT(string texto)
+		{
+			if (string.IsNullOrEmpty(texto)) return texto;
+
+			StringBuilder resultado = new StringBuilder();
+			for (int i = 0; i < texto.Length; i++)
+			{
+				char c = texto[i];
+				switch (c)
+				{
+					case '"':  resultado.Append("\\\""); break;
+					case '{':  resultado.Append("\\{");  break;
+					case '}':  resultado.Append("\\}");  break;
+					case '|':  resultado.Append("\\|");  break;
+					case '<':  resultado.Append("\\<");  break;
+					case '>':  resultado.Append("\\>");  break;
+					case '\\': resultado.Append("\\\\"); break;
+					default:   resultado.Append(c);      break;
+				}
+			}
+			return resultado.ToString();
+		}
+	}
 }
