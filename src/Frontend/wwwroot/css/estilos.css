@@ -36,3 +36,13 @@ button {
 button:hover {
     background-color: #2980b9;
 }
+
+/* Quitar flechitas de aumento/disminucion en campos numericos */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+    -webkit-appearance: none; 
+    margin: 0; 
+}
+input[type=number] { 
+    -moz-appearance: textfield; 
+}

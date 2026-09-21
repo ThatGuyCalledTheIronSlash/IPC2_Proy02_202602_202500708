@@ -35,8 +35,8 @@
 
 			<div class="panel">   
 				<h2>Obtener Libro con Mayor y Menor ISBN</h2>
-				<button id="btnMenor" style="background-color: #27ae60;">⬇️ Ver Menor ISBN</button>
-				<button id="btnMayor" style="background-color: #c0392b;">⬆️ Ver Mayor ISBN</button>
+				<button id="btnMenor" style="background-color: #27ae60;">Ver Menor ISBN</button>
+				<button id="btnMayor" style="background-color: #c0392b;">Ver Mayor ISBN</button>
 				<p id="mensajeExtremos" style="font-weight: bold; color: #d35400;"></p>
 			
 				<div id="resultadoExtremos" style="margin-top: 15px; padding: 15px; background: #e8f4f8; border-radius: 5px; display: none; text-align: left;">
@@ -49,7 +49,7 @@
 
 			<div class="panel">
 				<h2>Catálogo Global de Libros (Orden Ascendente)</h2>
-				<button id="btnListarTodosLibros" style="background-color: #2980b9;">📋 Listar Todos los Libros</button>
+				<button id="btnListarTodosLibros" style="background-color: #2980b9;">Listar Todos los Libros</button>
 				<p id="mensajeTodosLibros" style="font-weight: bold; color: #27ae60; margin-top: 10px;"></p>
 				<div id="contenedorTodosLibros" style="margin-top: 15px; display: none; max-height: 300px; overflow-y: auto;">
 					<table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
@@ -90,7 +90,7 @@
 				<h2>Buscar y Administrar Libro</h2>
 				<div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
 					<input type="number" id="txtBuscarIsbn" placeholder="Ingrese ISBN..." style="padding: 8px; width: 200px;" />
-					<button id="btnBuscarLibro" style="background-color: #f39c12;">🔍 Buscar</button>
+					<button id="btnBuscarLibro" style="background-color: #f39c12;">Buscar</button>
 				</div>
 			
 				<p id="mensajeBusqueda" style="font-weight: bold; color: #d35400;"></p>
@@ -107,7 +107,7 @@
 			</div>
 
 			<div class="panel" style="background: #e8f8f5; border-left: 5px solid #1abc9c;">
-				<h2>📊 Dashboard General</h2>
+				<h2>Dashboard General</h2>
 				<button id="btnActualizarDash">↻ Actualizar Estadísticas</button>
 				<div style="display: flex; justify-content: space-around; margin-top: 15px; font-size: 20px;">
 					<p>Total Categorías: <strong id="lblTotalCat" style="color: #2980b9;">0</strong></p>
@@ -121,8 +121,8 @@
 					<input type="text" id="txtSubcatArbol" placeholder="Subcategoría específica (dejar vacío para todo el árbol)" style="padding: 8px; width: 60%;" />
 				</div>
 				<div style="display: flex; justify-content: center; gap: 10px;">
-					<button id="btnVerArbol" style="background-color: #34495e;">📄 Ver como Lista</button>
-					<button id="btnGraficarArbol" style="background-color: #8e44ad;">🖼️ Generar Gráfica Graphviz</button>
+					<button id="btnVerArbol" style="background-color: #34495e;">Ver como Lista</button>
+					<button id="btnGraficarArbol" style="background-color: #8e44ad;">Generar Gráfica Graphviz</button>
 				</div>
 				<p id="mensajeArbol" style="font-weight: bold; margin-top: 10px;"></p>
 				<div id="contenedorArbol" style="margin-top: 15px; text-align: left; background: #ecf0f1; padding: 20px; border-radius: 5px; display: none;"></div>
@@ -147,7 +147,7 @@
 
 			<div class="panel" style="background: #acc789; border-left: 5px solid #2f6d78;">
 				<h2>ℹ️ Información y Ayuda</h2>
-				<p><strong>Desarrollador:</strong> Irons254</p>
+				<p><strong>Desarrollador:</strong> David Meza</p>
 				<p><strong>Carnet:</strong> 202500708 </p>
 				<p><strong>Curso:</strong> IPC2 - Proyecto 2</p>
 				<a href="#" style="display: inline-block; margin-top: 10px; padding: 10px 15px; background: #d35400; color: white; text-decoration: none; border-radius: 5px;">📄 Descargar Ensayo/Documentación</a>
@@ -324,12 +324,27 @@
 
 				libros.forEach(l => {
 					const fila = document.createElement('tr');
-					fila.innerHTML = `
-						<td style="padding: 6px 8px; border: 1px solid #ddd; font-weight: bold; color: #2980b9;">${l.isbn}</td>
-						<td style="padding: 6px 8px; border: 1px solid #ddd;">${l.titulo}</td>
-						<td style="padding: 6px 8px; border: 1px solid #ddd;">${l.autor}</td>
-						<td style="padding: 6px 8px; border: 1px solid #ddd;">${l.categoria}</td>
-					`;
+
+					const tdIsbn = document.createElement('td');
+					tdIsbn.style.cssText = "padding: 6px 8px; border: 1px solid #ddd; font-weight: bold; color: #2980b9;";
+					tdIsbn.textContent = l.isbn;
+
+					const tdTitulo = document.createElement('td');
+					tdTitulo.style.cssText = "padding: 6px 8px; border: 1px solid #ddd;";
+					tdTitulo.textContent = l.titulo;
+
+					const tdAutor = document.createElement('td');
+					tdAutor.style.cssText = "padding: 6px 8px; border: 1px solid #ddd;";
+					tdAutor.textContent = l.autor;
+
+					const tdCat = document.createElement('td');
+					tdCat.style.cssText = "padding: 6px 8px; border: 1px solid #ddd;";
+					tdCat.textContent = l.categoria;
+
+					fila.appendChild(tdIsbn);
+					fila.appendChild(tdTitulo);
+					fila.appendChild(tdAutor);
+					fila.appendChild(tdCat);
 					tbody.appendChild(fila);
 				});
 
@@ -455,7 +470,11 @@
 				if (respuesta.ok) {
 					contenedor.innerHTML = resultado.html;
 				} else {
-					contenedor.innerHTML = `<p style="color:#c0392b;">${resultado.mensaje}</p>`;
+					contenedor.innerHTML = '';
+					const pErr = document.createElement('p');
+					pErr.style.color = '#c0392b';
+					pErr.textContent = resultado.mensaje;
+					contenedor.appendChild(pErr);
 				}
 			} catch (error) {
 				contenedor.innerHTML = "<p style='color:#c0392b;'>Error de conexión con el servidor.</p>";

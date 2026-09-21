@@ -4,7 +4,7 @@ namespace Backend.TDA.Libros
 {
 	public delegate void AccionLibro(NodoLibro libro);
 
-	public class BSTLibros
+	public class AVLLibros
 	{
 		private class Nodo
 		{
@@ -22,7 +22,7 @@ namespace Backend.TDA.Libros
 
 		private Nodo? raiz;
 
-		public BSTLibros()
+		public AVLLibros()
 		{
 			raiz = null;
 		}

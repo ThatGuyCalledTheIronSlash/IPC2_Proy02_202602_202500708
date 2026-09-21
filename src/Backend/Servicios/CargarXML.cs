@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using System.Xml;
+using Backend.TDA.Categoria;
 
 namespace Backend.Servicios
 {
@@ -13,20 +14,6 @@ namespace Backend.Servicios
 
 	public class CargarXML
 	{
-		private class EntradaCat
-		{
-			public string Nombre;
-			public string? Padre;
-			public bool Agregada;
-
-			public EntradaCat(string nombre, string? padre)
-			{
-				Nombre = nombre;
-				Padre = padre;
-				Agregada = false;
-			}
-		}
-
 		public static ResultadoCargaXML LeerArchivo(string rutaArchivo, Catalogo catalogo)
 		{
 			XmlDocument doc = new XmlDocument();
@@ -45,56 +32,85 @@ namespace Backend.Servicios
 			XmlNodeList? nodosCategoria = doc.SelectNodes("/config/listaCategorias/categoria");
 			if (nodosCategoria != null && nodosCategoria.Count > 0)
 			{
-				int totalCats = nodosCategoria.Count;
-				EntradaCat[] entradas = new EntradaCat[totalCats];
-
-				for (int i = 0; i < totalCats; i++)
+				// Pasada previa: detectar categorías repetidas o ya existentes
+				AVLCategorias vistas = new AVLCategorias();
+				for (int i = 0; i < nodosCategoria.Count; i++)
 				{
 					XmlNode? nodoCat = nodosCategoria[i];
-					string nombreCat = nodoCat?.InnerText.Trim() ?? "";
-					string? padre = null;
+					if (nodoCat == null) continue;
 
-					if (nodoCat?.Attributes != null && nodoCat.Attributes["padre"] != null)
+					string nombreCat = nodoCat.InnerText.Trim();
+					if (string.IsNullOrWhiteSpace(nombreCat)) continue;
+
+					if (catalogo.BuscarCategoria(nombreCat) != null)
 					{
-						padre = nodoCat.Attributes["padre"]?.Value.Trim();
-						if (string.IsNullOrWhiteSpace(padre)) padre = null;
+						avisos.AppendLine($"Aviso (Categoría '{nombreCat}'): ya existe en el catálogo, se ignora.");
+						continue;
 					}
 
-					entradas[i] = new EntradaCat(nombreCat, padre);
+					try
+					{
+						vistas.Insertar(new NodoCategoria(nombreCat));
+					}
+					catch (InvalidOperationException)
+					{
+						avisos.AppendLine($"Aviso (Categoría '{nombreCat}'): está repetida en el archivo, se ignora la repetición.");
+					}
 				}
 
 				bool huboProgreso = true;
 				while (huboProgreso)
 				{
 					huboProgreso = false;
-					for (int i = 0; i < totalCats; i++)
+					for (int i = 0; i < nodosCategoria.Count; i++)
 					{
-						if (entradas[i].Agregada || string.IsNullOrWhiteSpace(entradas[i].Nombre))
+						XmlNode? nodoCat = nodosCategoria[i];
+						if (nodoCat == null) continue;
+
+						string nombreCat = nodoCat.InnerText.Trim();
+						if (string.IsNullOrWhiteSpace(nombreCat)) continue;
+
+						// Si ya existe en el catalogo, ya fue procesada anteriormente
+						if (catalogo.BuscarCategoria(nombreCat) != null)
 							continue;
 
-						if (entradas[i].Padre == null || catalogo.BuscarCategoria(entradas[i].Padre!) != null)
+						string? padre = null;
+						if (nodoCat.Attributes != null && nodoCat.Attributes["padre"] != null)
+						{
+							padre = nodoCat.Attributes["padre"]?.Value.Trim();
+							if (string.IsNullOrWhiteSpace(padre)) padre = null;
+						}
+
+						// Si es raiz o su padre ya fue registrado, se agrega
+						if (padre == null || catalogo.BuscarCategoria(padre) != null)
 						{
 							try
 							{
-								catalogo.AgregarCategoria(entradas[i].Nombre, entradas[i].Padre);
+								catalogo.AgregarCategoria(nombreCat, padre);
 								resultado.CategoriasAgregadas++;
+								huboProgreso = true;
 							}
 							catch (Exception ex)
 							{
-								avisos.AppendLine($"Aviso (Categoría '{entradas[i].Nombre}'): {ex.Message}");
+								avisos.AppendLine($"Aviso (Categoría '{nombreCat}'): {ex.Message}");
 							}
-
-							entradas[i].Agregada = true;
-							huboProgreso = true;
 						}
 					}
 				}
 
-				for (int i = 0; i < totalCats; i++)
+				// Revision final de categorias cuyos padres nunca fueron declarados
+				for (int i = 0; i < nodosCategoria.Count; i++)
 				{
-					if (!entradas[i].Agregada && !string.IsNullOrWhiteSpace(entradas[i].Nombre))
+					XmlNode? nodoCat = nodosCategoria[i];
+					if (nodoCat == null) continue;
+
+					string nombreCat = nodoCat.InnerText.Trim();
+					if (string.IsNullOrWhiteSpace(nombreCat)) continue;
+
+					if (catalogo.BuscarCategoria(nombreCat) == null)
 					{
-						avisos.AppendLine($"Aviso (Categoría): No se pudo agregar '{entradas[i].Nombre}' porque su categoría padre '{entradas[i].Padre}' nunca fue declarada.");
+						string? padre = nodoCat.Attributes?["padre"]?.Value.Trim();
+						avisos.AppendLine($"Aviso (Categoría): No se pudo agregar '{nombreCat}' porque su categoría padre '{padre}' nunca fue declarada.");
 					}
 				}
 			}

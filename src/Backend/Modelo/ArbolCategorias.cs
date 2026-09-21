@@ -5,13 +5,13 @@ namespace Backend.Modelo
 {
 	public class ArbolCategorias
 	{
-		public BSTCategorias CategoriasPrincipales { get; private set; }
-		private BSTCategorias indiceGlobal;
+		public AVLCategorias CategoriasPrincipales { get; private set; }
+		private AVLCategorias indiceGlobal;
 
 		public ArbolCategorias()
 		{
-			CategoriasPrincipales = new BSTCategorias();
-			indiceGlobal = new BSTCategorias();
+			CategoriasPrincipales = new AVLCategorias();
+			indiceGlobal = new AVLCategorias();
 		}
 
 		public void AgregarCategoria(string nombre, string? nombrePadre = null)
@@ -50,8 +50,8 @@ namespace Backend.Modelo
 
 		public void Reiniciar()
 		{
-			CategoriasPrincipales = new BSTCategorias();
-			indiceGlobal = new BSTCategorias();
+			CategoriasPrincipales = new AVLCategorias();
+			indiceGlobal = new AVLCategorias();
 		}
 	}
 }

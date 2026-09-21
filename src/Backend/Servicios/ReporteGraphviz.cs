@@ -9,7 +9,7 @@ namespace Backend.Servicios
 {
 	public class ReporteGraphviz
 	{
-		public static void GenerarGraficaLibros(BSTLibros libros, string rutaSalida)
+		public static void GenerarGraficaLibros(AVLLibros libros, string rutaSalida)
 		{
 			if (libros.EstaVacio())
 			{
@@ -44,7 +44,7 @@ namespace Backend.Servicios
 			EjecutarDot(sb.ToString(), rutaSalida);
 		}
 
-		public static void GenerarGraficaJerarquia(NodoCategoria? raizEspecifica, BSTCategorias raicesPrincipales, string rutaSalida)
+		public static void GenerarGraficaJerarquia(NodoCategoria? raizEspecifica, AVLCategorias raicesPrincipales, string rutaSalida)
 		{
 			if (raizEspecifica == null && raicesPrincipales.EstaVacio())
 			{
@@ -134,24 +134,15 @@ namespace Backend.Servicios
 		public static string SanitizarNombreArchivo(string nombre)
 		{
 			if (string.IsNullOrWhiteSpace(nombre)) return "grafica";
-			char[] invalidos = Path.GetInvalidFileNameChars();
-			char[] chars = nombre.ToCharArray();
-			for (int i = 0; i < chars.Length; i++)
+			StringBuilder sb = new StringBuilder();
+			foreach (char c in nombre)
 			{
-				if (chars[i] == ' ') chars[i] = '_';
+				if (char.IsLetterOrDigit(c) || c == '_')
+					sb.Append(c);
 				else
-				{
-					for (int j = 0; j < invalidos.Length; j++)
-					{
-						if (chars[i] == invalidos[j])
-						{
-							chars[i] = '_';
-							break;
-						}
-					}
-				}
+					sb.Append('_');
 			}
-			return new string(chars);
+			return sb.ToString();
 		}
 
 		private static string SanitizarId(string texto)

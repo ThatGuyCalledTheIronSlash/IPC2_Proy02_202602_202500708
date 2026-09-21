@@ -9,19 +9,19 @@ namespace Backend.Servicios
 {
 	public class Catalogo
 	{
-		public BSTLibros IndiceGlobalLibros { get; private set; }
+		public AVLLibros IndiceGlobalLibros { get; private set; }
 		private ArbolCategorias arbolCategorias;
 		public ArbolCategorias Categorias => arbolCategorias;
 
 		public Catalogo()
 		{
-			IndiceGlobalLibros = new BSTLibros();
+			IndiceGlobalLibros = new AVLLibros();
 			arbolCategorias = new ArbolCategorias();
 		}
 
 		public void InicializarCatalogo()
 		{
-			IndiceGlobalLibros = new BSTLibros();
+			IndiceGlobalLibros = new AVLLibros();
 			arbolCategorias.Reiniciar();
 		}
 
@@ -82,7 +82,7 @@ namespace Backend.Servicios
 			return IndiceGlobalLibros.ObtenerMaximo();
 		}
 
-		public BSTLibros ObtenerLibrosDeCategoriaYSubcategorias(string nombreCategoria)
+		public AVLLibros ObtenerLibrosDeCategoriaYSubcategorias(string nombreCategoria)
 		{
 			NodoCategoria? cat = BuscarCategoria(nombreCategoria);
 			if (cat == null)
@@ -90,7 +90,7 @@ namespace Backend.Servicios
 				throw new Exception($"La categoría '{nombreCategoria}' no existe en el catálogo.");
 			}
 
-			BSTLibros acumulador = new BSTLibros();
+			AVLLibros acumulador = new AVLLibros();
 
 			void Recolectar(NodoCategoria actual)
 			{
@@ -122,6 +122,37 @@ namespace Backend.Servicios
 			return total;
 		}
 
+		private static string EscaparJson(string texto)
+		{
+			if (string.IsNullOrEmpty(texto)) return "";
+
+			StringBuilder sb = new StringBuilder();
+			foreach (char c in texto)
+			{
+				switch (c)
+				{
+					case '\\': sb.Append("\\\\"); break;
+					case '"':  sb.Append("\\\""); break;
+					case '\n': sb.Append("\\n");  break;
+					case '\r': sb.Append("\\r");  break;
+					case '\t': sb.Append("\\t");  break;
+					case '\b': sb.Append("\\b");  break;
+					case '\f': sb.Append("\\f");  break;
+					default:
+						if (c < 0x20)
+						{
+							sb.Append($"\\u{(int)c:x4}");
+						}
+						else
+						{
+							sb.Append(c);
+						}
+						break;
+				}
+			}
+			return sb.ToString();
+		}
+
 		public string GenerarJsonTodosLibros()
 		{
 			if (IndiceGlobalLibros.EstaVacio())
@@ -136,9 +167,9 @@ namespace Backend.Servicios
 			{
 				if (!primero) sb.Append(",");
 				primero = false;
-				string titulo = (libro.Titulo ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"");
-				string autor = (libro.Autor ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"");
-				string cat = (libro.Categoria?.Nombre ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"");
+				string titulo = EscaparJson(libro.Titulo);
+				string autor = EscaparJson(libro.Autor);
+				string cat = EscaparJson(libro.Categoria?.Nombre ?? "");
 				sb.Append($"{{\"isbn\":{libro.ISBN},\"titulo\":\"{titulo}\",\"autor\":\"{autor}\",\"categoria\":\"{cat}\"}}");
 			});
 			sb.Append("]");
@@ -168,7 +199,7 @@ namespace Backend.Servicios
 			void ConstruirNodo(NodoCategoria cat)
 			{
 				string nombreSeguro = WebUtility.HtmlEncode(cat.Nombre);
-				sb.Append($"<li style='margin-bottom: 6px; font-size: 15px;'>📁 <strong>{nombreSeguro}</strong>");
+				sb.Append($"<li style='margin-bottom: 6px; font-size: 15px;'><strong>{nombreSeguro}</strong>");
 
 				bool tieneLibros = !cat.LibrosDirectos.EstaVacio();
 				bool tieneHijos = !cat.Hijos.EstaVacio();
@@ -181,7 +212,7 @@ namespace Backend.Servicios
 					{
 						string tit = WebUtility.HtmlEncode(libro.Titulo);
 						string aut = WebUtility.HtmlEncode(libro.Autor);
-						sb.Append($"<li style='color: #2c3e50; font-size: 13px; margin: 3px 0;'>📖 <span style='color:#e67e22;'>[{libro.ISBN}]</span> <em>{tit}</em> - <small>{aut}</small></li>");
+						sb.Append($"<li style='color: #2c3e50; font-size: 13px; margin: 3px 0;'><span style='color:#e67e22;'>[{libro.ISBN}]</span> <em>{tit}</em> - <small>{aut}</small></li>");
 					});
 
 					cat.Hijos.RecorridoInOrder(hijo => ConstruirNodo(hijo));
